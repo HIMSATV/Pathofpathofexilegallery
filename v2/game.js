@@ -637,16 +637,21 @@ function resumeGame(){
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+
+// v2에서는 #ui가 없을 수 있음 → null 안전 처리
 const ui = document.getElementById("ui");
 
-let uiHeight = 120;
+let uiHeight = 0;
 
 function resize(){
-  uiHeight = ui.getBoundingClientRect().height || 120;
+  uiHeight = ui ? (ui.getBoundingClientRect().height || 0) : 0;
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight - uiHeight;
-  if(gamePaused) capturePausedFrame(pauseOpts);
+  if(typeof gamePaused !== "undefined" && gamePaused && typeof capturePausedFrame === "function"){
+    capturePausedFrame(pauseOpts);
+  }
 }
+
 resize();
 window.addEventListener("resize", ()=>requestAnimationFrame(resize));
 requestAnimationFrame(resize);
