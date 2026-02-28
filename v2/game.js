@@ -4,6 +4,8 @@
    - Add your own hooks anywhere by setting:
        window.GameHooks = { afterRenderPanels(){ ... } , ... }
    ========================================================= */
+if (window.__GAME_V2_LOADED__) { console.warn("game.js loaded twice"); }
+window.__GAME_V2_LOADED__ = true;
 window.GameHooks = window.GameHooks || {};
 function _callHook(name, ...args){
   try{
@@ -2514,8 +2516,14 @@ function buildAffixDataFromMods(mods){
 /* ============================= */
 /* ✅ POE식 이름 생성 (접두/접미, 레어 이름) */
 /* ============================= */
-const RARE_NAME_A = ["망령","암흑","피의","폭풍","철","그림자","공허","파멸","서리","번개","잔혹","광기의","망각","귀신","지옥","죽음","칠흑","부패","독","지배"];
-const RARE_NAME_B = ["약탈자","학살자","송곳니","칼날","발톱","수호자","징표","심장","파수꾼","파괴자","사냥꾼","추적자","심연","망치","창","검","방패","의지","서약","파멸"];
+// ✅ 중복 로드/중복 선언에도 안전하게 (const 금지)
+var RARE_NAME_A = window.RARE_NAME_A || (window.RARE_NAME_A = [
+  "망령","암흑","피의","폭풍","철","그림자","공허","파멸","서리","번개","잔혹","광기의","망각","귀신","지옥","죽음","칠흑","부패","독","지배"
+]);
+
+var RARE_NAME_B = window.RARE_NAME_B || (window.RARE_NAME_B = [
+  "약탈자","학살자","송곳니","칼날","발톱","수호자","징표","심장","파수꾼","파괴자","사냥꾼","추적자","심연","망치","창","검","방패","의지","서약","파멸"
+]);
 function randPick(arr){ return arr[(Math.random()*arr.length)|0]; }
 function rollRareName(){ return randPick(RARE_NAME_A) + " " + randPick(RARE_NAME_B); }
 
