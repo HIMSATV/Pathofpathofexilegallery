@@ -10,7 +10,16 @@
 <body>
 
 <canvas id="game"></canvas>
-<div id="ui" style="height:0;display:none;"></div>
+<div id="ui">
+  <div id="movePad"><div id="stick"></div></div>
+  <div style="position:relative; width:var(--btn); height:var(--btn);">
+    <button id="attackBtn" aria-label="attack">⚔️</button>
+  </div>
+</div>
+
+<button id="lootBtn" aria-label="loot">💰</button>
+
+<div id="ui-root"></div>
 <div id="ui-root"></div>
 
 <script src="./game.js?v=9"></script>
