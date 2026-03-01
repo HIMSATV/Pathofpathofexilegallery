@@ -872,7 +872,11 @@ function rebuildWalls(){
     Render: {
       draw(s){
         ctx.clearRect(0,0,World.W(),World.H());
-
+// ✅ 카메라 따라가기 시작
+const camX = s.player.x - World.W()/2;
+const camY = s.player.y - World.H()/2;
+ctx.save();
+ctx.translate(-camX, -camY);
         // bg
         ctx.fillStyle="#060606";
         ctx.fillRect(0,0,World.W(),World.H());
@@ -926,6 +930,7 @@ function rebuildWalls(){
           ctx.fillStyle="rgba(255,240,200,.95)";
           ctx.fill();
         }
+     ctx.restore(); // ✅ 카메라 따라가기 끝
       }
     }
   };
