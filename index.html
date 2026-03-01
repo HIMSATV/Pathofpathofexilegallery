@@ -1280,7 +1280,9 @@ Render: {
     const dt = Math.min(0.033, (now - state.time.last)/1000);
     state.time.last = now;
     state.time.dt = dt;
-
+    
+    state.frame = (state.frame || 0) + 1;
+    
     if(!state.paused.forChoice){
       // update pipeline (꼬임 방지: 순서 고정)
       Systems.Player.update(state, dt);
