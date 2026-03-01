@@ -541,7 +541,7 @@ function rebuildWalls(){
           type, rarity,
           baseName: base.name,
           name: base.name,
-          base: structuredClone(base),
+          base: JSON.parse(JSON.stringify(base)),
           prefix: null,
           suffix: null,
           mods: {},
