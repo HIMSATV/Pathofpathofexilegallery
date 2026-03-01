@@ -8226,4 +8226,29 @@ if(typeof loop==="function") window.Game.loop = loop;
 
     
   }catch(_){}}
+  // ===== V2 Game Interface (필수) =====
+window.Game = {
+  bindCanvas(c){
+    canvas = c;
+    if(canvas){
+      ctx = canvas.getContext("2d");
+    }
+  },
+
+ resize(w,h,uiH){
+  if (typeof window.resize === "function") {
+    window.resize(w,h,uiH);
+  }
+},
+
+  init(){
+    // 초기화 필요하면 여기
+  },
+
+  loop(){
+    if(!ctx) return;
+    update();
+    draw();
+  }
+};
 })();
