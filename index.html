@@ -879,7 +879,7 @@ ctx.save();
 ctx.translate(-camX, -camY);
         // bg
         ctx.fillStyle="#060606";
-        ctx.fillRect(0,0,World.W(),World.H());
+        ctx.fillRect(camX, camY, World.W(), World.H());
 
         // walls
         for(const w of s.world.walls){
