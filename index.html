@@ -407,7 +407,9 @@ const Renderer = (() => {
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    const R = 22;
+    const R = Math.ceil(
+  Math.max(canvas.width / TW, canvas.height / TH)
+) + 6;
     const minX = Math.max(0, Math.floor(camX - R));
     const maxX = Math.min(state.map.w-1, Math.ceil(camX + R));
     const minY = Math.max(0, Math.floor(camY - R));
