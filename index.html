@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Iso POE Skeleton + Mobile Joystick</title>
+<style>
+  :root { --bg:#0f0f12; --panel:#17171c; --panel2:#1f1f26; --line:#2b2b33; --txt:#e8e8ea; --muted:#a7a7b0; }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden;}
+  #wrap{position:fixed;inset:0;display:flex;}
+  #left{flex:1;position:relative;}
+  #game{position:absolute;inset:0;display:block;background:#111;}
+  #ui{width:360px;max-width:44vw;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;}
+  .section{padding:12px 12px 8px;border-bottom:1px solid var(--line);}
+  .title{font-size:13px;color:var(--muted);margin:0 0 8px 0;display:flex;justify-content:space-between;gap:10px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;}
+  .slot{
+    width:76px;height:40px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;cursor:pointer;user-select:none;
+    padding:4px;box-sizing:border-box;text-align:center;line-height:1.1;
+  }
+  .slot.empty{color:#7a7a86}
+  .slot.sel{outline:2px solid #d6d6ff; outline-offset:1px;}
+  .slot.bad{outline:2px solid #ff5a5a; outline-offset:1px;}
+  .grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;}
+  .small{font-size:12px;color:var(--muted);line-height:1.35;white-space:pre-line}
+  #log{height:120px;overflow:auto;background:#101015;border-top:1px solid var(--line);padding:10px;font-size:12px;color:#d2d2d9;}
+  #hint{font-size:12px;color:var(--muted);padding:10px 12px;}
+  .pill{padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:#121218;font-size:12px;color:var(--muted)}
+
+  /* Mobile joystick overlay */
+  #touchUI{position:absolute;inset:0;pointer-events:none;}
+  .joyBase{
+    position:absolute;left:18px;bottom:18px;
+    width:150px;height:150px;border-radius:50%;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.12);
+    display:none;
+  }
+  .joyKnob{
+    position:absolute;left:50%;top:50%;
+    width:68px;height:68px;border-radius:50%;
+    transform:translate(-50%,-50%);
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.18);
+  }
+  .atkBtn{
+    position:absolute;right:18px;bottom:28px;
+    width:110px;height:110px;border-radius:50%;
+    background:rgba(255,80,80,0.20);
+    border:2px solid rgba(255,80,80,0.35);
+    display:none;
+    align-items:center;justify-content:center;
+    color:#ffd7d7;font-weight:700;
+    text-shadow:0 1px 0 rgba(0,0,0,0.35);
+  }
+  .atkBtn:active{transform:scale(0.98)}
+  .mobileOnly{display:none;}
+  @media (pointer:coarse){
+    .joyBase,.atkBtn{display:flex;}
+    #hint .mobileOnly{display:inline;}
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="left">
+    <canvas id="game"></canvas>
+    <div id="touchUI">
+      <div class="joyBase" id="joyBase"><div class="joyKnob" id="joyKnob"></div></div>
+      <div class="atkBtn" id="atkBtn">ATTACK</div>
+    </div>
+  </div>
+
+  <div id="ui">
+    <div class="section">
+      <div class="title">
+        <span>스탯</span>
+        <span class="pill" id="seedPill"></span>
+      </div>
+      <div class="small" id="statsText"></div>
+    </div>
+
+    <div class="section">
+      <div class="title">
+        <span>장비 (Equipment)</span>
+        <span class="pill" id="cursorPill">cursor: 없음</span>
+      </div>
+      <div class="row" id="equipRow"></div>
+    </div>
+
+    <div class="section">
+      <div class="title"><span>인벤 (Inventory)</span><span class="pill">4×5</span></div>
+      <div class="grid" id="invGrid"></div>
+    </div>
+
+    <div class="section">
+      <div class="title"><span>바닥 (Ground)</span><span class="pill" id="groundCount"></span></div>
+      <div class="row" id="groundRow"></div>
+    </div>
+
+    <div id="hint">
+      이동: WASD/방향키 또는 좌측 조이스틱<span class="mobileOnly"> (모바일)</span><br>
+      아이템: 슬롯 클릭으로 집기/놓기<br>
+      공격: 우측 ATTACK 버튼(로그)
+    </div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script>
+/* =========================
+   Utilities / RNG
+========================= */
+function mulberry32(a){ return function(){ let t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
+function uid(){ return Math.random().toString(16).slice(2) + Date.now().toString(16); }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function log(msg){
+  const el = document.getElementById("log");
+  const t = new Date();
+  const line = `[${String(t.getHours()).padStart(2,"0")}:${String(t.getMinutes()).padStart(2,"0")}:${String(t.getSeconds()).padStart(2,"0")}] ${msg}`;
+  const div = document.createElement("div");
+  div.textContent = line;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+/* =========================
+   Core Data: Item + Container
+========================= */
+function makeItem({name, baseType, slot, rarity="normal", ilvl=1, tags=[], affixes=[]}){
+  return { id: uid(), name, baseType, slot, rarity, ilvl, tags, affixes };
+}
+function makeContainer({kind, size, slotKeys=null, rules}){
+  const slots = slotKeys ? Object.fromEntries(slotKeys.map(k => [k, null])) : Array(size).fill(null);
+  return { kind, slots, rules };
+}
+const Rules = {
+  any: { canPlace: () => true },
+  equipment: { canPlace: (item, to, key) => (!item) ? true : (item.slot === key) }
+};
+
+function getSlot(container, key){ return container.slots[key]; }
+function setSlot(container, key, value){ container.slots[key] = value; }
+
+/* =========================
+   Single Move Function
+========================= */
+function moveItem(fromC, fromKey, toC, toKey){
+  const item = getSlot(fromC, fromKey);
+  if(!item) return false;
+
+  if(!toC.rules.canPlace(item, toC, toKey)) return false;
+
+  const dst = getSlot(toC, toKey);
+  if(dst && !fromC.rules.canPlace(dst, fromC, fromKey)) return false;
+
+  setSlot(fromC, fromKey, dst || null);
+  setSlot(toC, toKey, item);
+  return true;
+}
+
+/* =========================
+   Stats: recompute
+========================= */
+function collectModifiersFromItem(item){
+  const mods = [];
+  if(!item) return mods;
+  for(const af of (item.affixes||[])){
+    for(const s of (af.stats||[])) mods.push(s);
+  }
+  return mods;
+}
+function recomputeStats(state){
+  const out = {...state.player.baseStats};
+
+  const eq = state.containers.equipment;
+  for(const key of Object.keys(eq.slots)){
+    const item = eq.slots[key];
+    for(const m of collectModifiersFromItem(item)){
+      out[m.k] = (out[m.k] ?? 0) + m.v;
+    }
+  }
+  for(const m of state.mapMods) out[m.k] = (out[m.k] ?? 0) + m.v;
+  for(const m of state.buffs)   out[m.k] = (out[m.k] ?? 0) + m.v;
+
+  state.player.stats = out;
+}
+
+/* =========================
+   State
+========================= */
+const seed = (Date.now() ^ (Math.random()*1e9)) >>> 0;
+const rnd = mulberry32(seed);
+
+const state = {
+  seed, rnd, time:0,
+  map: { w: 30, h: 30, tw: 64, th: 32 },
+  mapMods: [],
+  buffs: [],
+  player: {
+    x: 15, y: 15,
+    speed: 4.2, // tiles/sec
+    baseStats: { life: 100, armor: 0, dmg: 8, move: 0 },
+    stats: {}
+  },
+  containers: {
+    equipment: makeContainer({ kind:"equipment", slotKeys:["weapon","helm","chest","ring1","ring2"], rules: Rules.equipment }),
+    inventory: makeContainer({ kind:"inventory", size: 20, rules: Rules.any }),
+    ground:    makeContainer({ kind:"ground",    size: 10, rules: Rules.any })
+  },
+  cursor: { from:null, key:null }
+};
+
+document.getElementById("seedPill").textContent = `seed: ${seed}`;
+
+// sample items
+function aff(stats){ return { stats }; }
+setSlot(state.containers.ground, 0, makeItem({
+  name:"Rusty Sword", baseType:"sword", slot:"weapon", rarity:"magic", ilvl:1, tags:["weapon","melee"],
+  affixes:[ aff([{k:"dmg", v:6}]) ]
+}));
+setSlot(state.containers.ground, 1, makeItem({
+  name:"Leather Cap", baseType:"helm", slot:"helm", rarity:"magic", ilvl:1, tags:["armor","helm"],
+  affixes:[ aff([{k:"life", v:18}]) ]
+}));
+setSlot(state.containers.ground, 2, makeItem({
+  name:"Chain Shirt", baseType:"chest", slot:"chest", rarity:"rare", ilvl:2, tags:["armor","chest"],
+  affixes:[ aff([{k:"armor", v:12}]), aff([{k:"life", v:22}]) ]
+}));
+setSlot(state.containers.ground, 3, makeItem({
+  name:"Iron Ring", baseType:"ring", slot:"ring1", rarity:"magic", ilvl:1, tags:["jewellery","ring"],
+  affixes:[ aff([{k:"life", v:10}]) ]
+}));
+setSlot(state.containers.ground, 4, makeItem({
+  name:"Sapphire Ring", baseType:"ring", slot:"ring2", rarity:"magic", ilvl:1, tags:["jewellery","ring"],
+  affixes:[ aff([{k:"armor", v:4}]) ]
+}));
+
+recomputeStats(state);
+
+/* =========================
+   UI: renderContainer + click handler
+========================= */
+function slotLabel(item){
+  if(!item) return "";
+  const r = item.rarity === "rare" ? "★" : item.rarity === "magic" ? "◆" : "•";
+  return `${r} ${item.name}`;
+}
+function renderContainer(container, el, layout){
+  el.innerHTML = "";
+  const slots = container.slots;
+  const entries = Array.isArray(slots)
+    ? slots.map((v,i)=>[i,v])
+    : Object.entries(slots).map(([k,v])=>[k,v]);
+
+  for(const [key, item] of entries){
+    const s = document.createElement("div");
+    s.className = "slot" + (!item ? " empty" : "");
+    s.dataset.kind = container.kind;
+    s.dataset.key = key;
+    s.textContent = item ? slotLabel(item) : (layout?.emptyLabel ? layout.emptyLabel(key) : String(key));
+    el.appendChild(s);
+  }
+}
+function getContainerByKind(kind){
+  if(kind === "equipment") return state.containers.equipment;
+  if(kind === "inventory") return state.containers.inventory;
+  if(kind === "ground") return state.containers.ground;
+}
+function parseKey(container, raw){
+  return Array.isArray(container.slots) ? Number(raw) : String(raw);
+}
+function clearSelection(){
+  state.cursor.from = null; state.cursor.key = null;
+  document.getElementById("cursorPill").textContent = "cursor: 없음";
+}
+function setSelection(kind, key){
+  state.cursor.from = kind; state.cursor.key = key;
+  const fromC = getContainerByKind(kind);
+  const item = getSlot(fromC, key);
+  document.getElementById("cursorPill").textContent = item ? `cursor: ${item.name}` : "cursor: (빈칸)";
+}
+function flashBad(kind, key){
+  const node = document.querySelector(`.slot[data-kind="${kind}"][data-key="${key}"]`);
+  if(!node) return;
+  node.classList.add("bad");
+  setTimeout(()=>node.classList.remove("bad"), 180);
+}
+function tryPlaceOrPick(clickedKind, clickedKey){
+  const clickedC = getContainerByKind(clickedKind);
+  const dstKey = clickedKey;
+
+  if(state.cursor.from === null){
+    const item = getSlot(clickedC, dstKey);
+    if(item) setSelection(clickedKind, dstKey);
+    return;
+  }
+  if(state.cursor.from === clickedKind && state.cursor.key === dstKey){
+    clearSelection(); return;
+  }
+
+  const fromC = getContainerByKind(state.cursor.from);
+  const ok = moveItem(fromC, state.cursor.key, clickedC, dstKey);
+  if(ok){
+    const moved = getSlot(clickedC, dstKey);
+    log(`이동: ${moved?.name ?? "?"} → ${clickedKind}:${dstKey}`);
+    clearSelection();
+    recomputeStats(state);
+  }else{
+    flashBad(clickedKind, dstKey);
+    log(`불가: ${state.cursor.from}:${state.cursor.key} → ${clickedKind}:${dstKey}`);
+  }
+}
+function refreshUI(){
+  renderContainer(state.containers.equipment, document.getElementById("equipRow"), { emptyLabel:(k)=>k.toUpperCase() });
+  renderContainer(state.containers.inventory, document.getElementById("invGrid"), { emptyLabel:()=>"+" });
+  renderContainer(state.containers.ground, document.getElementById("groundRow"), { emptyLabel:()=>"( )" });
+
+  document.querySelectorAll(".slot").forEach(n=>n.classList.remove("sel"));
+  if(state.cursor.from !== null){
+    const n = document.querySelector(`.slot[data-kind="${state.cursor.from}"][data-key="${state.cursor.key}"]`);
+    if(n) n.classList.add("sel");
+  }
+
+  const st = state.player.stats;
+  document.getElementById("statsText").textContent =
+    `생명력: ${st.life}\n방어도: ${st.armor}\n피해: ${st.dmg}\n이동 보너스: ${st.move}%`;
+
+  const gc = state.containers.ground.slots.filter(Boolean).length;
+  document.getElementById("groundCount").textContent = `${gc}/10`;
+}
+document.getElementById("ui").addEventListener("click", (e)=>{
+  const slot = e.target.closest(".slot");
+  if(!slot) return;
+  const kind = slot.dataset.kind;
+  const c = getContainerByKind(kind);
+  const key = parseKey(c, slot.dataset.key);
+  tryPlaceOrPick(kind, key);
+  refreshUI();
+});
+refreshUI();
+
+/* =========================
+   Mobile Joystick (Touch)
+========================= */
+const joy = {
+  active:false, id:null,
+  baseX:0, baseY:0,
+  dx:0, dy:0,
+  max:55
+};
+const joyBase = document.getElementById("joyBase");
+const joyKnob = document.getElementById("joyKnob");
+const atkBtn = document.getElementById("atkBtn");
+
+function setKnob(dx,dy){
+  joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+}
+function resetJoy(){
+  joy.active=false; joy.id=null; joy.dx=0; joy.dy=0;
+  setKnob(0,0);
+}
+function touchPoint(ev, id){
+  for(const t of ev.changedTouches){
+    if(t.identifier === id) return t;
+  }
+  return null;
+}
+
+// Use pointer events for joystick area (left canvas)
+const left = document.getElementById("left");
+left.addEventListener("touchstart", (e)=>{
+  // If touch starts on attack button, ignore here
+  if(e.target.closest && e.target.closest("#atkBtn")) return;
+  // Only start if on left half (so right side can be used later)
+  const t = e.changedTouches[0];
+  const rect = left.getBoundingClientRect();
+  const x = t.clientX - rect.left;
+  const y = t.clientY - rect.top;
+  if(x > rect.width * 0.6) return;
+
+  joy.active=true; joy.id=t.identifier;
+  joy.baseX=x; joy.baseY=y;
+
+  // move base under finger
+  joyBase.style.left = (joy.baseX - 75) + "px";
+  joyBase.style.bottom = "auto";
+  joyBase.style.top = (joy.baseY - 75) + "px";
+  joyBase.style.display = "flex";
+
+  setKnob(0,0);
+  e.preventDefault();
+}, {passive:false});
+
+left.addEventListener("touchmove", (e)=>{
+  if(!joy.active) return;
+  const rect = left.getBoundingClientRect();
+  const t = touchPoint(e, joy.id);
+  if(!t) return;
+  const x = t.clientX - rect.left;
+  const y = t.clientY - rect.top;
+
+  let dx = x - joy.baseX;
+  let dy = y - joy.baseY;
+  const len = Math.hypot(dx,dy);
+  const max = joy.max;
+  if(len > max){
+    dx = dx/len * max;
+    dy = dy/len * max;
+  }
+  joy.dx = dx/max;
+  joy.dy = dy/max;
+  setKnob(dx,dy);
+  e.preventDefault();
+}, {passive:false});
+
+left.addEventListener("touchend", (e)=>{
+  if(!joy.active) return;
+  const t = touchPoint(e, joy.id);
+  if(!t) return;
+  joyBase.style.display = ""; // back to CSS (only on coarse pointer)
+  resetJoy();
+  e.preventDefault();
+}, {passive:false});
+
+left.addEventListener("touchcancel", ()=>{
+  joyBase.style.display = "";
+  resetJoy();
+}, {passive:false});
+
+atkBtn.addEventListener("touchstart", (e)=>{
+  log("ATTACK");
+  e.preventDefault();
+}, {passive:false});
+
+/* =========================
+   Isometric render + movement (keyboard + joystick)
+========================= */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas(){
+  const uiW = document.getElementById("ui").offsetWidth;
+  canvas.width = Math.floor(window.innerWidth - uiW);
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+const keys = {};
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
+
+function iso(x,y){
+  const TW = state.map.tw, TH = state.map.th;
+  return {
+    x:(x - y) * (TW/2) + canvas.width/2,
+    y:(x + y) * (TH/2) + 90
+  };
+}
+function drawTile(x,y,color){
+  const TW = state.map.tw, TH = state.map.th;
+  const p = iso(x,y);
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+  ctx.lineTo(p.x + TW/2, p.y + TH/2);
+  ctx.lineTo(p.x, p.y + TH);
+  ctx.lineTo(p.x - TW/2, p.y + TH/2);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+let last = performance.now();
+function loop(now){
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  state.time += dt;
+
+  // Movement input combine
+  let dx = 0, dy = 0;
+
+  // keyboard
+  if(keys["ArrowUp"]||keys["w"]) dy -= 1;
+  if(keys["ArrowDown"]||keys["s"]) dy += 1;
+  if(keys["ArrowLeft"]||keys["a"]) dx -= 1;
+  if(keys["ArrowRight"]||keys["d"]) dx += 1;
+
+  // joystick (screen y down => dy positive)
+  dx += joy.dx;
+  dy += joy.dy;
+
+  if(dx || dy){
+    const len = Math.hypot(dx,dy) || 1;
+    dx/=len; dy/=len;
+    const spd = state.player.speed * (1 + (state.player.stats.move||0)/100);
+    state.player.x = clamp(state.player.x + dx * spd * dt, 0, state.map.w-1);
+    state.player.y = clamp(state.player.y + dy * spd * dt, 0, state.map.h-1);
+  }
+
+  // render
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let y=0;y<state.map.h;y++){
+    for(let x=0;x<state.map.w;x++){
+      drawTile(x,y,(x+y)%2 ? "#23232a" : "#2a2a33");
+    }
+  }
+
+  // player
+  const p = iso(state.player.x, state.player.y);
+  ctx.fillStyle = "#ff3b3b";
+  ctx.beginPath();
+  ctx.arc(p.x, p.y + state.map.th/2, 12, 0, Math.PI*2);
+  ctx.fill();
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
