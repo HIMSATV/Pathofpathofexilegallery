@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Isometric Game</title>
+<style>
+body{
+  margin:0;
+  background:#111;
+  overflow:hidden;
+}
+canvas{
+  display:block;
+  background:#1a1a1a;
+}
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+const TW = 64;
+const TH = 32;
+const MAP_W = 30;
+const MAP_H = 30;
+
+let player = {
+  x: 15,
+  y: 15,
+  speed: 0.12
+};
+
+const keys = {};
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
+
+function iso(x,y){
+  return {
+    x:(x - y) * (TW/2) + canvas.width/2,
+    y:(x + y) * (TH/2) + 100
+  };
+}
+
+function drawTile(x,y,color){
+  const p = iso(x,y);
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+  ctx.lineTo(p.x + TW/2, p.y + TH/2);
+  ctx.lineTo(p.x, p.y + TH);
+  ctx.lineTo(p.x - TW/2, p.y + TH/2);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function update(){
+  if(keys["ArrowUp"]||keys["w"]) player.y -= player.speed;
+  if(keys["ArrowDown"]||keys["s"]) player.y += player.speed;
+  if(keys["ArrowLeft"]||keys["a"]) player.x -= player.speed;
+  if(keys["ArrowRight"]||keys["d"]) player.x += player.speed;
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for(let y=0;y<MAP_H;y++){
+    for(let x=0;x<MAP_W;x++){
+      drawTile(x,y,(x+y)%2?"#2a2a2a":"#333");
+    }
+  }
+
+  const p = iso(player.x,player.y);
+  ctx.fillStyle="red";
+  ctx.beginPath();
+  ctx.arc(p.x, p.y+TH/2, 12, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
