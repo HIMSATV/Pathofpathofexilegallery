@@ -1860,8 +1860,7 @@ Render: {
   // 5) INIT
   // =========================================================
   World.resize();
- state.camera.x = state.player.x - state.camera.w/2;
-state.camera.y = state.player.y - state.camera.h/2;
+ Systems.Camera.snap(state);
   __stateReady = true;
   try{
     generateDungeon();
