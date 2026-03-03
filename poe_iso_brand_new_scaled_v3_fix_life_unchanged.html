@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Isometric POE-like Prototype (NEW v2 scaled)</title>
+<style>
+  :root{
+    /* Base scale */
+    --U: 0.62;
+
+    /* Independent scales (fix) */
+    --lifeScale: 1.0;      /* life orb stays same */
+    --controlScale: 0.60;  /* joystick + attack: -40% */
+    --miniScale: 0.60;     /* minimap: -40% */
+
+    --m:  calc(16px * var(--U));
+    --m2: calc(24px * var(--U));
+
+    /* Life (NOT reduced) */
+    --lifeD: calc(150px * var(--U) * var(--lifeScale));
+
+    /* Minimap (reduced) */
+    --mapW:  calc(240px * var(--U) * var(--miniScale));
+    --mapH:  calc(150px * var(--U) * var(--miniScale));
+
+    /* Controls (reduced) and ATK == JOY */
+    --joyD:  calc(190px * var(--U) * var(--controlScale));
+    --joyK:  calc(84px  * var(--U) * var(--controlScale));
+    --atkD:  var(--joyD);
+
+    /* Menu button can follow base scale only (unchanged) */
+    --menuH: calc(48px  * var(--U));
+  }
+
+  html,body{height:100%;margin:0;overflow:hidden;background:#0b0b0e;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  #stage{position:fixed;inset:0;touch-action:none;}
+  #view{position:absolute;inset:0;display:block;width:100%;height:100%;background:#0f0f14;}
+
+  /* HUD */
+  #hud{position:absolute;inset:0;pointer-events:none;z-index:10;}
+
+  /* Life orb (SVG liquid clip) */
+  #lifeOrb{
+    position:absolute;left:var(--m);top:var(--m);
+    width:var(--lifeD);height:var(--lifeD);
+    filter: drop-shadow(0 12px 18px rgba(0,0,0,0.55));
+  }
+  #lifeOrb .shell{
+    width:100%;height:100%;
+    border-radius:50%;
+    border:3px solid rgba(240,240,255,0.14);
+    background:rgba(0,0,0,0.52);
+    box-shadow:inset 0 0 18px rgba(0,0,0,0.75);
+    overflow:hidden;
+    position:relative;
+  }
+  #lifeOrb .txt{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:rgba(245,245,255,0.92);
+    text-shadow:0 2px 10px rgba(0,0,0,0.85);
+    font-weight:900;
+    line-height:1.05;
+    pointer-events:none;
+  }
+  #lifeOrb .txt .t{font-size:12px;opacity:0.75;letter-spacing:0.9px;margin-bottom:6px;}
+  #lifeOrb .txt .n{font-size:26px;}
+  #lifeOrb .txt .d{font-size:14px;opacity:0.85;margin-top:3px;}
+
+  /* Rect minimap (strict rectangle) */
+  #mini{
+    position:absolute;right:var(--m);top:var(--m);
+    width:var(--mapW);height:var(--mapH);
+    border-radius:14px;
+    border:2px solid rgba(240,240,255,0.14);
+    background:rgba(0,0,0,0.32);
+    box-shadow:0 12px 30px rgba(0,0,0,0.55), inset 0 0 18px rgba(0,0,0,0.75);
+    overflow:hidden;
+  }
+  #mini canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+
+  /* Controls layer */
+  #ctrl{position:absolute;inset:0;pointer-events:none;z-index:20;}
+
+  #joy{
+    position:absolute;left:var(--m2);bottom:var(--m2);
+    width:var(--joyD);height:var(--joyD);border-radius:50%;
+    background:rgba(255,255,255,0.05);
+    border:2px solid rgba(255,255,255,0.14);
+    pointer-events:auto;
+    touch-action:none;
+  }
+  #joy .k{
+    position:absolute;left:50%;top:50%;
+    width:var(--joyK);height:var(--joyK);border-radius:50%;
+    transform:translate(-50%,-50%);
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.18);
+  }
+
+  #atk{
+    position:absolute;right:calc(40px * var(--U) * var(--controlScale));bottom:calc(22px * var(--U) * var(--controlScale));
+    width:var(--atkD);height:var(--atkD);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 35% 30%, rgba(255,210,130,0.42), rgba(255,140,40,0.30) 45%, rgba(140,35,0,0.24));
+    border:2px solid rgba(255,170,80,0.35);
+    box-shadow:0 10px 26px rgba(0,0,0,0.55), inset 0 0 18px rgba(0,0,0,0.55);
+    color:rgba(255,245,235,0.92);
+    font-weight:900;
+    user-select:none;
+    pointer-events:auto;
+    touch-action:none;
+  }
+  #atk:active{transform:scale(0.98);}
+  #atkPulse{
+    position:absolute;inset:-6px;border-radius:50%;
+    border:2px solid rgba(255,220,160,0);
+    box-shadow:0 0 0 rgba(255,190,110,0);
+    opacity:0;
+    pointer-events:none;
+  }
+
+  #menuBtn{
+    position:absolute;left:50%;top:calc(18px * var(--U));
+    transform:translateX(-50%);
+    height:var(--menuH);
+    padding:0 calc(14px * var(--U));
+    border-radius:999px;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(20,20,28,0.45);
+    border:1px solid rgba(255,255,255,0.16);
+    box-shadow:0 10px 26px rgba(0,0,0,0.55), inset 0 0 16px rgba(0,0,0,0.55);
+    color:rgba(240,240,250,0.92);
+    font-weight:900;letter-spacing:0.6px;
+    user-select:none;
+    pointer-events:auto;
+    touch-action:none;
+    z-index:30;
+  }
+  #menuBtn:active{transform:translateX(-50%) scale(0.98);}
+
+  /* Fullscreen panel */
+  #panelMask{
+    position:absolute;inset:0;display:none;z-index:1000;
+    background:rgba(0,0,0,0.78);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    pointer-events:auto;
+  }
+  #panel{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:min(980px, 92vw);
+    height:min(560px, 84vh);
+    border-radius:18px;
+    background:rgba(15,15,22,0.72);
+    border:1px solid rgba(255,255,255,0.14);
+    box-shadow:0 18px 45px rgba(0,0,0,0.75), inset 0 0 18px rgba(0,0,0,0.65);
+    overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+  #panelTop{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 14px;
+    border-bottom:1px solid rgba(255,255,255,0.10);
+    color:rgba(240,240,250,0.92);
+    font-weight:900;
+  }
+  #panelClose{
+    appearance:none;border:none;
+    background:rgba(255,255,255,0.10);
+    border:1px solid rgba(255,255,255,0.16);
+    color:rgba(240,240,250,0.92);
+    font-weight:900;
+    padding:10px 12px;border-radius:12px;
+  }
+  #panelBody{flex:1;min-height:0;display:flex;gap:12px;padding:12px;}
+  #panelTabs{
+    width:210px;
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:14px;
+    background:rgba(0,0,0,0.25);
+    padding:10px;
+  }
+  .tab{padding:10px 10px;border-radius:12px;color:rgba(220,220,235,0.90);font-weight:800;user-select:none;}
+  .tab.on{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);}
+  #panelMain{
+    flex:1;
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:14px;
+    background:rgba(0,0,0,0.20);
+    padding:14px;
+    color:rgba(220,220,235,0.86);
+    overflow:auto;
+  }
+
+  @media (pointer:coarse){
+    #joy,#atk,#menuBtn{display:flex;}
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="view"></canvas>
+
+  <div id="hud">
+    <div id="lifeOrb">
+      <div class="shell">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <defs><clipPath id="clipCircle"><circle cx="50" cy="50" r="48"></circle></clipPath></defs>
+          <g clip-path="url(#clipCircle)">
+            <rect x="0" y="0" width="100" height="100" fill="rgba(0,0,0,0.35)"></rect>
+            <rect id="lifeFill" x="-2" y="50" width="104" height="60" fill="rgba(220,40,40,0.88)"></rect>
+            <path id="lifeWave" d="" fill="rgba(255,130,130,0.62)"></path>
+          </g>
+          <circle cx="50" cy="50" r="48" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="3"></circle>
+          <circle cx="50" cy="50" r="43" fill="none" stroke="rgba(0,0,0,0.55)" stroke-width="2"></circle>
+        </svg>
+        <div class="txt">
+          <div class="t">LIFE</div>
+          <div class="n" id="lifeNow">100</div>
+          <div class="d" id="lifeDen">/ 100</div>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:50%;
+          background:radial-gradient(circle at 30% 22%, rgba(255,255,255,0.18), rgba(255,255,255,0.02) 48%, rgba(0,0,0,0) 68%),
+                     radial-gradient(circle at 50% 78%, rgba(0,0,0,0.35), rgba(0,0,0,0) 55%);
+          pointer-events:none;"></div>
+      </div>
+    </div>
+
+    <div id="mini"><canvas id="miniC"></canvas></div>
+  </div>
+
+  <div id="ctrl">
+    <div id="joy"><div class="k" id="joyK"></div></div>
+    <div id="atk">ATK<div id="atkPulse"></div></div>
+    <div id="menuBtn">MENU</div>
+  </div>
+
+  <div id="panelMask" aria-hidden="true">
+    <div id="panel">
+      <div id="panelTop">
+        <div>MENU</div>
+        <button id="panelClose">닫기</button>
+      </div>
+      <div id="panelBody">
+        <div id="panelTabs">
+          <div class="tab on">스킬</div>
+          <div class="tab">가방</div>
+          <div class="tab">장착</div>
+          <div class="tab">스펙</div>
+          <div class="tab">제작</div>
+        </div>
+        <div id="panelMain">여기에 모든 정보(스킬/가방/장착/스펙/제작)를 넣는다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // Model
+  const M = {
+    map: { w: 120, h: 120, tw: 64, th: 32 },
+    p:   { x: 60, y: 60, r: 0.45, life: 100, max: 100, spd: 6.0 },
+    in:  { mx: 0, my: 0 },
+    fx:  { atk: 0 }
+  };
+
+  function tick(dt){
+    const p = M.p;
+    const mx = M.in.mx, my = M.in.my;
+    if(mx || my){
+      const L = Math.hypot(mx, my) || 1;
+      p.x = clamp(p.x + (mx/L) * p.spd * dt, p.r, M.map.w - p.r);
+      p.y = clamp(p.y + (my/L) * p.spd * dt, p.r, M.map.h - p.r);
+    }
+    M.fx.atk = Math.max(0, M.fx.atk - dt * 2.6);
+  }
+  function doAttack(){ M.fx.atk = 1.0; }
+
+  // World renderer
+  const view = $("view");
+  const ctx = view.getContext("2d", { alpha:false });
+  function resizeView(){ view.width = window.innerWidth; view.height = window.innerHeight; }
+  window.addEventListener("resize", resizeView);
+  resizeView();
+
+  function iso(wx, wy, camX, camY){
+    const TW = M.map.tw, TH = M.map.th;
+    const sx  = (wx - wy) * (TW/2);
+    const sy  = (wx + wy) * (TH/2);
+    const csx = (camX - camY) * (TW/2);
+    const csy = (camX + camY) * (TH/2);
+    return { x: (sx - csx) + view.width/2, y: (sy - csy) + view.height/2 };
+  }
+
+  function drawWorld(){
+    const TW = M.map.tw, TH = M.map.th;
+    const p = M.p;
+    const camX = p.x, camY = p.y;
+
+    ctx.fillStyle = "#0f0f14";
+    ctx.fillRect(0,0,view.width,view.height);
+
+    const R = Math.ceil(Math.max(view.width / TW, view.height / TH)) + 10;
+    const minX = Math.max(0, Math.floor(camX - R));
+    const maxX = Math.min(M.map.w-1, Math.ceil(camX + R));
+    const minY = Math.max(0, Math.floor(camY - R));
+    const maxY = Math.min(M.map.h-1, Math.ceil(camY + R));
+
+    for(let y=minY;y<=maxY;y++){
+      for(let x=minX;x<=maxX;x++){
+        const pos = iso(x,y,camX,camY);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        ctx.lineTo(pos.x + TW/2, pos.y + TH/2);
+        ctx.lineTo(pos.x, pos.y + TH);
+        ctx.lineTo(pos.x - TW/2, pos.y + TH/2);
+        ctx.closePath();
+        ctx.fillStyle = ((x+y)&1) ? "#1f1f27" : "#262631";
+        ctx.fill();
+      }
+    }
+
+    const pos = iso(p.x,p.y,camX,camY);
+    ctx.fillStyle = "#ff3b3b";
+    ctx.beginPath(); ctx.arc(pos.x, pos.y + TH/2, 12, 0, Math.PI*2); ctx.fill();
+
+    if(M.fx.atk > 0){
+      const a = M.fx.atk;
+      ctx.globalAlpha = 0.35 * a;
+      ctx.strokeStyle = "#ffd29b";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y + TH/2, 22 + (1-a)*30, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // Rect minimap
+  const miniC = $("miniC");
+  const mctx = miniC.getContext("2d");
+  let mdpr = 1;
+  function resizeMini(){
+    const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    const r = miniC.getBoundingClientRect();
+    miniC.width  = Math.max(1, Math.floor(r.width  * dpr));
+    miniC.height = Math.max(1, Math.floor(r.height * dpr));
+    mdpr = dpr;
+  }
+  window.addEventListener("resize", resizeMini);
+  requestAnimationFrame(resizeMini);
+
+  function drawMini(){
+    const w = miniC.width, h = miniC.height;
+    mctx.clearRect(0,0,w,h);
+    mctx.fillStyle = "rgba(0,0,0,0.55)";
+    mctx.fillRect(0,0,w,h);
+
+    mctx.globalAlpha = 0.25;
+    mctx.strokeStyle = "rgba(255,255,255,0.15)";
+    const step = Math.max(18*mdpr, Math.floor(Math.min(w,h)/6));
+    for(let x=0;x<=w;x+=step){ mctx.beginPath(); mctx.moveTo(x,0); mctx.lineTo(x,h); mctx.stroke(); }
+    for(let y=0;y<=h;y+=step){ mctx.beginPath(); mctx.moveTo(0,y); mctx.lineTo(w,y); mctx.stroke(); }
+    mctx.globalAlpha = 1;
+
+    const px = (M.p.x / (M.map.w-1)) * w;
+    const py = (M.p.y / (M.map.h-1)) * h;
+    mctx.fillStyle = "rgba(255,80,80,0.95)";
+    mctx.beginPath(); mctx.arc(px, py, 4*mdpr, 0, Math.PI*2); mctx.fill();
+  }
+
+  // Life orb
+  const lifeNow = $("lifeNow"), lifeDen = $("lifeDen"), lifeFill = $("lifeFill"), lifeWave = $("lifeWave");
+  function drawLife(){
+    const p = M.p;
+    const pct = p.max > 0 ? clamp(p.life/p.max, 0, 1) : 0;
+
+    const level = 100 - pct * 100;
+    lifeFill.setAttribute("y", String(level));
+    lifeFill.setAttribute("height", String(110 - level));
+
+    const amp = 2.2;
+    const phase = (performance.now()/1000) * 2.4;
+    const y0 = level;
+    const step = 6;
+    let d = `M 0 ${y0}`;
+    for(let x=0; x<=100; x+=step){
+      const t = x / 14;
+      const y = y0 + Math.sin(t + phase) * amp;
+      d += ` L ${x} ${y}`;
+    }
+    d += ` L 100 110 L 0 110 Z`;
+    lifeWave.setAttribute("d", d);
+
+    lifeNow.textContent = String(Math.floor(p.life));
+    lifeDen.textContent = `/ ${Math.floor(p.max)}`;
+  }
+
+  // Controls
+  const joy = $("joy"), knob = $("joyK"), atk = $("atk"), atkPulse = $("atkPulse");
+  const panelMask = $("panelMask"), menuBtn = $("menuBtn"), panelClose = $("panelClose");
+
+  const J = { on:false, id:-1, cx:0, cy:0, dx:0, dy:0, max:64 };
+  function updateJoyGeom(){
+    const s = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--U")) || 1) *
+              (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--controlScale")) || 1);
+    J.max = 64 * s;
+    const r = joy.getBoundingClientRect();
+    J.cx = r.left + r.width/2;
+    J.cy = r.top  + r.height/2;
+  }
+  window.addEventListener("resize", updateJoyGeom);
+  requestAnimationFrame(updateJoyGeom);
+
+  function setKnob(px,py){ knob.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`; }
+
+  joy.addEventListener("pointerdown", (e)=>{
+    J.on = true; J.id = e.pointerId;
+    joy.setPointerCapture(e.pointerId);
+    updateJoyGeom();
+    J.dx = 0; J.dy = 0; setKnob(0,0);
+    e.preventDefault();
+  }, {passive:false});
+
+  joy.addEventListener("pointermove", (e)=>{
+    if(!J.on || e.pointerId !== J.id) return;
+    let px = e.clientX - J.cx;
+    let py = e.clientY - J.cy;
+    const dist = Math.hypot(px,py);
+    if(dist > J.max){ px = px/dist*J.max; py = py/dist*J.max; }
+    J.dx = px / J.max; J.dy = py / J.max;
+    setKnob(px,py);
+    e.preventDefault();
+  }, {passive:false});
+
+  function joyUp(e){
+    if(e.pointerId !== J.id) return;
+    J.on=false; J.id=-1; J.dx=0; J.dy=0; setKnob(0,0);
+    e.preventDefault();
+  }
+  joy.addEventListener("pointerup", joyUp, {passive:false});
+  joy.addEventListener("pointercancel", joyUp, {passive:false});
+
+  function flashAtk(){
+    atkPulse.style.opacity = "1";
+    atkPulse.style.borderColor = "rgba(255,220,160,0.65)";
+    atkPulse.style.boxShadow = "0 0 24px rgba(255,190,110,0.35)";
+    setTimeout(()=>{ atkPulse.style.opacity="0"; atkPulse.style.borderColor="rgba(255,220,160,0)"; atkPulse.style.boxShadow="0 0 0 rgba(255,190,110,0)"; }, 90);
+  }
+  atk.addEventListener("pointerdown", (e)=>{ doAttack(); flashAtk(); e.preventDefault(); }, {passive:false});
+
+  function openPanel(){ panelMask.style.display="block"; panelMask.setAttribute("aria-hidden","false"); }
+  function closePanel(){ panelMask.style.display="none"; panelMask.setAttribute("aria-hidden","true"); }
+  menuBtn.addEventListener("pointerdown", (e)=>{ openPanel(); e.preventDefault(); }, {passive:false});
+  panelClose.addEventListener("click", closePanel);
+  panelMask.addEventListener("click", (e)=>{ if(e.target===panelMask) closePanel(); });
+
+  // Loop
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(0.05, (now-last)/1000);
+    last = now;
+
+    M.in.mx = J.dx;
+    M.in.my = J.dy;
+
+    tick(dt);
+    drawWorld();
+    drawMini();
+    drawLife();
+
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
