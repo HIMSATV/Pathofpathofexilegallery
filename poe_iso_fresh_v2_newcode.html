@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Iso POE-like Base (Fresh v2)</title>
+<style>
+  :root{
+    --ui: 0.62;
+
+    --pad: calc(16px * var(--ui));
+    --pad2: calc(24px * var(--ui));
+
+    --orb: calc(150px * var(--ui));
+    --mmW: calc(220px * var(--ui));
+    --mmH: calc(150px * var(--ui));
+
+    --joy: calc(190px * var(--ui));
+    --knob: calc(84px * var(--ui));
+
+    --atk: calc(160px * var(--ui));
+    --menuH: calc(48px * var(--ui));
+  }
+
+  html,body{height:100%; margin:0; overflow:hidden; background:#0b0b0e; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  #root{position:fixed; inset:0; touch-action:none;}
+  #game{position:absolute; inset:0; width:100%; height:100%; display:block; background:#0f0f14;}
+
+  /* HUD */
+  #hud{position:absolute; inset:0; pointer-events:none; z-index:10;}
+
+  /* Life orb (DIV-based, no canvas) */
+  #life{
+    position:absolute; left:var(--pad); top:var(--pad);
+    width:var(--orb); height:var(--orb); border-radius:50%;
+    border:3px solid rgba(240,240,255,0.14);
+    box-shadow:0 12px 30px rgba(0,0,0,0.55), inset 0 0 18px rgba(0,0,0,0.75);
+    overflow:hidden;
+    background:rgba(0,0,0,0.55);
+  }
+  #life .liquid{
+    position:absolute; left:-6%; width:112%; bottom:-8%;
+    height:110%;
+    background:linear-gradient(180deg, rgba(255,120,120,0.78), rgba(200,35,35,0.90));
+    transform:translateY(50%);
+  }
+  #life .wave{
+    position:absolute; left:-10%; width:120%; height:18%;
+    top:-8%;
+    background:radial-gradient(circle at 20% 60%, rgba(255,200,200,0.35), rgba(255,200,200,0.00) 55%),
+               radial-gradient(circle at 70% 30%, rgba(255,200,200,0.25), rgba(255,200,200,0.00) 55%);
+    opacity:0.55;
+    mix-blend-mode:screen;
+    filter:blur(1px);
+    animation: drift 2.8s linear infinite;
+  }
+  @keyframes drift{ from{transform:translateX(-8%);} to{transform:translateX(8%);} }
+  #life .shine{
+    position:absolute; inset:0; border-radius:50%;
+    background:radial-gradient(circle at 30% 22%, rgba(255,255,255,0.18), rgba(255,255,255,0.02) 48%, rgba(0,0,0,0) 68%),
+               radial-gradient(circle at 50% 78%, rgba(0,0,0,0.35), rgba(0,0,0,0) 55%);
+    pointer-events:none;
+  }
+  #life .txt{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:rgba(245,245,255,0.92);
+    text-shadow:0 2px 10px rgba(0,0,0,0.85);
+    font-weight:900;
+    line-height:1.05;
+  }
+  #life .txt .label{font-size:12px; opacity:0.75; letter-spacing:0.9px; margin-bottom:6px;}
+  #life .txt .num{font-size:26px;}
+  #life .txt .den{font-size:14px; opacity:0.85; margin-top:3px;}
+
+  /* Rect minimap (true rectangle) */
+  #mm{
+    position:absolute; right:var(--pad); top:var(--pad);
+    width:var(--mmW); height:var(--mmH);
+    border-radius:14px;
+    border:2px solid rgba(240,240,255,0.14);
+    background:rgba(0,0,0,0.35);
+    box-shadow:0 12px 30px rgba(0,0,0,0.55), inset 0 0 18px rgba(0,0,0,0.75);
+    overflow:hidden;
+  }
+  #mm canvas{position:absolute; inset:0; width:100%; height:100%; display:block;}
+
+  /* Controls */
+  #controls{position:absolute; inset:0; pointer-events:none; z-index:20;}
+
+  #joyBase{
+    position:absolute; left:var(--pad2); bottom:var(--pad2);
+    width:var(--joy); height:var(--joy); border-radius:50%;
+    background:rgba(255,255,255,0.05);
+    border:2px solid rgba(255,255,255,0.14);
+    pointer-events:auto;
+  }
+  #joyKnob{
+    position:absolute; left:50%; top:50%;
+    width:var(--knob); height:var(--knob); border-radius:50%;
+    transform:translate(-50%,-50%);
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.18);
+  }
+
+  #atkBtn{
+    position:absolute; right:calc(40px * var(--ui)); bottom:calc(22px * var(--ui));
+    width:var(--atk); height:var(--atk); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 35% 30%, rgba(255,210,130,0.42), rgba(255,140,40,0.30) 45%, rgba(140,35,0,0.24));
+    border:2px solid rgba(255,170,80,0.35);
+    box-shadow:0 10px 26px rgba(0,0,0,0.55), inset 0 0 18px rgba(0,0,0,0.55);
+    color:rgba(255,245,235,0.92);
+    font-weight:900;
+    pointer-events:auto;
+    user-select:none;
+  }
+  #atkBtn:active{transform:scale(0.98);}
+
+  #menu{
+    position:absolute; left:50%; top:calc(18px * var(--ui));
+    transform:translateX(-50%);
+    height:var(--menuH);
+    padding:0 calc(14px * var(--ui));
+    border-radius:999px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(20,20,28,0.45);
+    border:1px solid rgba(255,255,255,0.16);
+    box-shadow:0 10px 26px rgba(0,0,0,0.55), inset 0 0 16px rgba(0,0,0,0.55);
+    color:rgba(240,240,250,0.92);
+    font-weight:900; letter-spacing:0.6px;
+    pointer-events:auto;
+    user-select:none;
+  }
+  #menu:active{transform:translateX(-50%) scale(0.98);}
+
+  /* Full overlay */
+  #overlay{
+    position:absolute; inset:0; display:none; z-index:1000;
+    background:rgba(0,0,0,0.78);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    pointer-events:auto;
+  }
+  #panel{
+    position:absolute; left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    width:min(980px, 92vw);
+    height:min(560px, 84vh);
+    border-radius:18px;
+    background:rgba(15,15,22,0.72);
+    border:1px solid rgba(255,255,255,0.14);
+    box-shadow:0 18px 45px rgba(0,0,0,0.75), inset 0 0 18px rgba(0,0,0,0.65);
+    overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  #panelTop{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px;
+    border-bottom:1px solid rgba(255,255,255,0.10);
+    color:rgba(240,240,250,0.92);
+    font-weight:900;
+  }
+  #closeBtn{
+    appearance:none; border:none;
+    background:rgba(255,255,255,0.10);
+    border:1px solid rgba(255,255,255,0.16);
+    color:rgba(240,240,250,0.92);
+    font-weight:900;
+    padding:10px 12px;
+    border-radius:12px;
+  }
+  #panelBody{
+    display:flex; gap:12px; padding:12px; min-height:0; flex:1;
+  }
+  #tabs{
+    width:210px;
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:14px;
+    background:rgba(0,0,0,0.25);
+    padding:10px;
+  }
+  .tab{
+    padding:10px 10px; border-radius:12px;
+    color:rgba(220,220,235,0.90);
+    font-weight:800;
+  }
+  .tab.active{background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);}
+  #content{
+    flex:1;
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:14px;
+    background:rgba(0,0,0,0.20);
+    padding:14px;
+    color:rgba(220,220,235,0.86);
+    overflow:auto;
+  }
+
+  /* Allow desktop testing too */
+  @media (pointer:fine){
+    #joyBase, #atkBtn, #menu{opacity:0.9;}
+  }
+</style>
+</head>
+<body>
+<div id="root">
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <div id="life">
+      <div class="liquid" id="lifeLiquid"><div class="wave"></div></div>
+      <div class="shine"></div>
+      <div class="txt">
+        <div class="label">LIFE</div>
+        <div class="num" id="lifeCur">100</div>
+        <div class="den" id="lifeMax">/ 100</div>
+      </div>
+    </div>
+
+    <div id="mm"><canvas id="mmc"></canvas></div>
+  </div>
+
+  <div id="controls">
+    <div id="joyBase"><div id="joyKnob"></div></div>
+    <div id="atkBtn">ATK</div>
+    <div id="menu">MENU</div>
+  </div>
+
+  <div id="overlay" aria-hidden="true">
+    <div id="panel">
+      <div id="panelTop">
+        <div>MENU</div>
+        <button id="closeBtn">닫기</button>
+      </div>
+      <div id="panelBody">
+        <div id="tabs">
+          <div class="tab active">스킬</div>
+          <div class="tab">가방</div>
+          <div class="tab">장착</div>
+          <div class="tab">스펙</div>
+          <div class="tab">제작</div>
+        </div>
+        <div id="content">
+          앞으로 모든 정보(스킬/가방/장착/캐릭터 스펙/제작 등)를 이 창 하나에 넣는다.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========= Game State (pure) ========= */
+const Game = {
+  map: { w: 120, h: 120, tw: 64, th: 32 },
+  player: { x: 60, y: 60, r: 0.45, life: 100, maxLife: 100, speed: 6.0 },
+  input: { mx: 0, my: 0 },
+  fx: { atk: 0 }
+};
+
+function step(dt){
+  const p = Game.player;
+  const mx = Game.input.mx, my = Game.input.my;
+
+  if(mx || my){
+    const L = Math.hypot(mx,my) || 1;
+    const ux = mx/L, uy = my/L;
+    p.x = clamp(p.x + ux * p.speed * dt, p.r, Game.map.w - p.r);
+    p.y = clamp(p.y + uy * p.speed * dt, p.r, Game.map.h - p.r);
+  }
+
+  Game.fx.atk = Math.max(0, Game.fx.atk - dt*2.6);
+}
+
+function attack(){
+  Game.fx.atk = 1;
+}
+
+/* ========= Renderer ========= */
+class IsoRenderer{
+  constructor(canvas){
+    this.c = canvas;
+    this.ctx = canvas.getContext("2d");
+    this.resize();
+    window.addEventListener("resize", ()=>this.resize());
+  }
+  resize(){
+    this.c.width = window.innerWidth;
+    this.c.height = window.innerHeight;
+  }
+  iso(wx, wy, camX, camY){
+    const {tw:TW, th:TH} = Game.map;
+    const sx = (wx - wy) * (TW/2);
+    const sy = (wx + wy) * (TH/2);
+    const csx = (camX - camY) * (TW/2);
+    const csy = (camX + camY) * (TH/2);
+    return { x: (sx - csx) + this.c.width/2, y: (sy - csy) + this.c.height/2 };
+  }
+  draw(){
+    const ctx = this.ctx;
+    const {tw:TW, th:TH} = Game.map;
+    const p = Game.player;
+
+    ctx.fillStyle = "#0f0f14";
+    ctx.fillRect(0,0,this.c.width,this.c.height);
+
+    const camX = p.x, camY = p.y;
+    const R = Math.ceil(Math.max(this.c.width / TW, this.c.height / TH)) + 10;
+    const minX = Math.max(0, Math.floor(camX - R));
+    const maxX = Math.min(Game.map.w-1, Math.ceil(camX + R));
+    const minY = Math.max(0, Math.floor(camY - R));
+    const maxY = Math.min(Game.map.h-1, Math.ceil(camY + R));
+
+    for(let y=minY;y<=maxY;y++){
+      for(let x=minX;x<=maxX;x++){
+        const pos = this.iso(x,y,camX,camY);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        ctx.lineTo(pos.x + TW/2, pos.y + TH/2);
+        ctx.lineTo(pos.x, pos.y + TH);
+        ctx.lineTo(pos.x - TW/2, pos.y + TH/2);
+        ctx.closePath();
+        ctx.fillStyle = ((x+y)&1) ? "#1f1f27" : "#262631";
+        ctx.fill();
+      }
+    }
+
+    const pos = this.iso(p.x, p.y, camX, camY);
+    ctx.fillStyle = "#ff3b3b";
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y + TH/2, 12, 0, Math.PI*2);
+    ctx.fill();
+
+    if(Game.fx.atk > 0){
+      const a = Game.fx.atk;
+      ctx.globalAlpha = 0.35 * a;
+      ctx.strokeStyle = "#ffd29b";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y + TH/2, 22 + (1-a)*30, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+/* ========= Minimap ========= */
+class MiniMap{
+  constructor(canvas){
+    this.c = canvas;
+    this.ctx = canvas.getContext("2d");
+    this.resize();
+    window.addEventListener("resize", ()=>this.resize());
+  }
+  resize(){
+    const dpr = Math.max(1, Math.min(3, window.devicePixelRatio||1));
+    const r = this.c.getBoundingClientRect();
+    this.c.width = Math.max(1, Math.floor(r.width*dpr));
+    this.c.height = Math.max(1, Math.floor(r.height*dpr));
+    this.dpr = dpr;
+  }
+  draw(){
+    const ctx = this.ctx;
+    const w = this.c.width, h = this.c.height;
+    ctx.clearRect(0,0,w,h);
+
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.fillRect(0,0,w,h);
+
+    // grid
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    const step = Math.max(18*this.dpr, Math.floor(Math.min(w,h)/6));
+    for(let x=0;x<=w;x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+    for(let y=0;y<=h;y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+
+    // player dot
+    const px = (Game.player.x / (Game.map.w-1)) * w;
+    const py = (Game.player.y / (Game.map.h-1)) * h;
+    ctx.fillStyle = "rgba(255,80,80,0.95)";
+    ctx.beginPath(); ctx.arc(px,py,4*this.dpr,0,Math.PI*2); ctx.fill();
+
+    // vignette
+    const g = ctx.createRadialGradient(w*0.5,h*0.5,Math.min(w,h)*0.15,w*0.5,h*0.5,Math.max(w,h)*0.8);
+    g.addColorStop(0,"rgba(255,255,255,0.04)");
+    g.addColorStop(0.65,"rgba(0,0,0,0)");
+    g.addColorStop(1,"rgba(0,0,0,0.60)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,w,h);
+  }
+}
+
+/* ========= Life Orb UI ========= */
+const lifeLiquid = document.getElementById("lifeLiquid");
+const lifeCur = document.getElementById("lifeCur");
+const lifeMax = document.getElementById("lifeMax");
+
+function renderLife(){
+  const p = Game.player;
+  const pct = p.maxLife > 0 ? clamp(p.life/p.maxLife, 0, 1) : 0;
+  // liquid moves down as life decreases
+  const y = (1 - pct) * 70; // %
+  lifeLiquid.style.transform = `translateY(${y}%)`;
+  lifeCur.textContent = Math.floor(p.life);
+  lifeMax.textContent = `/ ${Math.floor(p.maxLife)}`;
+}
+
+/* ========= Controls ========= */
+const joyBase = document.getElementById("joyBase");
+const joyKnob = document.getElementById("joyKnob");
+const atkBtn = document.getElementById("atkBtn");
+
+const overlay = document.getElementById("overlay");
+const menu = document.getElementById("menu");
+const closeBtn = document.getElementById("closeBtn");
+
+const Joy = {
+  active:false,
+  pid:null,
+  cx:0, cy:0,
+  dx:0, dy:0,
+  max: 64
+};
+
+function updateJoyMetrics(){
+  const s = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ui")) || 1;
+  Joy.max = 64 * s;
+  const br = joyBase.getBoundingClientRect();
+  Joy.cx = br.left + br.width/2;
+  Joy.cy = br.top + br.height/2;
+}
+window.addEventListener("resize", updateJoyMetrics);
+requestAnimationFrame(updateJoyMetrics);
+
+function setKnob(px,py){
+  joyKnob.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
+}
+
+joyBase.addEventListener("pointerdown", (e)=>{
+  Joy.active = True;
+}, {passive:false});
+</script>
+<script>
+/* pointer events without duplication */
+function onJoyDown(e){
+  Joy.active = true;
+  Joy.pid = e.pointerId;
+  joyBase.setPointerCapture(e.pointerId);
+  updateJoyMetrics();
+  setKnob(0,0);
+  Joy.dx = 0; Joy.dy = 0;
+  e.preventDefault();
+}
+function onJoyMove(e){
+  if(!Joy.active || e.pointerId !== Joy.pid) return;
+  let px = e.clientX - Joy.cx;
+  let py = e.clientY - Joy.cy;
+  const dist = Math.hypot(px,py);
+  if(dist > Joy.max){
+    px = px/dist*Joy.max;
+    py = py/dist*Joy.max;
+  }
+  Joy.dx = px / Joy.max;
+  Joy.dy = py / Joy.max;
+  setKnob(px,py);
+  e.preventDefault();
+}
+function onJoyUp(e){
+  if(e.pointerId !== Joy.pid) return;
+  Joy.active = false;
+  Joy.pid = null;
+  Joy.dx = 0; Joy.dy = 0;
+  setKnob(0,0);
+  e.preventDefault();
+}
+
+joyBase.addEventListener("pointerdown", onJoyDown, {passive:false});
+joyBase.addEventListener("pointermove", onJoyMove, {passive:false});
+joyBase.addEventListener("pointerup", onJoyUp, {passive:false});
+joyBase.addEventListener("pointercancel", onJoyUp, {passive:false});
+
+atkBtn.addEventListener("pointerdown", (e)=>{
+  attack();
+  e.preventDefault();
+}, {passive:false});
+
+function openMenu(){ overlay.style.display = "block"; overlay.setAttribute("aria-hidden","false"); }
+function closeMenu(){ overlay.style.display = "none"; overlay.setAttribute("aria-hidden","true"); }
+menu.addEventListener("pointerdown", (e)=>{ openMenu(); e.preventDefault(); }, {passive:false});
+closeBtn.addEventListener("click", closeMenu);
+overlay.addEventListener("click", (e)=>{ if(e.target === overlay) closeMenu(); });
+
+/* ========= Loop ========= */
+const renderer = new IsoRenderer(document.getElementById("game"));
+const minimap = new MiniMap(document.getElementById("mmc"));
+
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now - last)/1000);
+  last = now;
+
+  Game.input.mx = Joy.dx;
+  Game.input.my = Joy.dy;
+
+  step(dt);
+  renderer.draw();
+  minimap.draw();
+  renderLife();
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
