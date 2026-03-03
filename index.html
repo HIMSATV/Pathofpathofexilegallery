@@ -598,8 +598,11 @@ const Paperdoll = (() => {
     ctx.globalAlpha = 0.10;
     ctx.fillStyle = "#fff";
     ctx.beginPath(); ctx.arc(x-4, ay+24, 7, 0, Math.PI*2); ctx.fill();
-    ctx.globalAlpha = 1;
-  }
+ ctx.globalAlpha = 1;
+
+// 🔥 이 줄 추가
+ctx.restore();
+}
 
   return { draw, baseFrames, DIRS };
 })();
@@ -1244,6 +1247,7 @@ if(p.anim){
   const TH = C.map.th;
   const pos = this.iso(p.x, p.y, camX, camY);
   Paperdoll.draw(ctx, pos.x, pos.y + TH/2, p.anim || {state:"idle",t:0,frame:0,dir:4,atkT:0}, p.equip || {});
+  
 },
 
     drawMob(ctx, m, camX, camY){
