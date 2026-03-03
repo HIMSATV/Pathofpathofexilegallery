@@ -410,11 +410,10 @@ const Renderer = (() => {
     const R = Math.ceil(
   Math.max(canvas.width / TW, canvas.height / TH)
 ) + 6;
-    const minX = Math.max(0, Math.floor(camX - R));
-    const maxX = Math.min(state.map.w-1, Math.ceil(camX + R));
-    const minY = Math.max(0, Math.floor(camY - R));
-    const maxY = Math.min(state.map.h-1, Math.ceil(camY + R));
-
+  const minX = 0;
+const maxX = state.map.w - 1;
+const minY = 0;
+const maxY = state.map.h - 1;
     for(let y=minY;y<=maxY;y++){
       for(let x=minX;x<=maxX;x++){
         const pos = isoWithCamera(x,y,camX,camY,TW,TH);
