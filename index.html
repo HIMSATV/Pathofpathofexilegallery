@@ -7897,8 +7897,8 @@ function _pickSubKind(table, baseId, itemObj, fallback){
 }
 
 // 티어에 따라 "크기/무게감"만 조절(종류는 baseId로 결정)
-const helmWeight  = (helmTier  >= 5) ? 1.35 : (helmTier  >= 3 ? 1.15 : 1.05);
-const chestWeight = (chestTier >= 5) ? 1.28 : (chestTier >= 3 ? 1.12 : 1.05);
+const helmWeight  = (helmTier  >= 5) ? 1.25 : (helmTier  >= 3 ? 1.10 : 1.00);
+const chestWeight = (chestTier >= 5) ? 1.18 : (chestTier >= 3 ? 1.08 : 1.00);
 const helmKind  = _helmObj  ? _pickSubKind(HELM_SUBLOOKS,  helmId,  _helmObj,  "hood")  : null;
 const chestKind = _chestObj ? _pickSubKind(CHEST_SUBLOOKS, chestId, _chestObj, "robe") : null;
 
