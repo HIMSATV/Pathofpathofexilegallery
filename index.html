@@ -3761,18 +3761,52 @@ let baseDamage = baseDamageBase;
 let ultiDamage = ultiDamageBase;
 
 player.gear = {
-  dmgMul: 1,
-  spdMul: 1,
-  atkSpdMul: 1,
-  rangeMul: 1,
   armorAdd: 0,
   maxHpAdd: 0,
   hpRegen: 0,
-  critChanceAdd: 0,
-  critChanceMul: 1,
-  critMultiAdd: 0,
-};
 
+  dmgMul: 1,
+  dmgInc: 0,
+  dmgMore: 1,
+
+  atkSpdMul: 1,
+  atkSpdInc: 0,
+  atkSpdMore: 1,
+
+  spdMul: 1,
+  rangeMul: 1,
+  rangeInc: 0,
+  rangeMore: 1,
+
+  critChanceAdd: 0,
+  critChanceInc: 0,
+  critChanceMore: 1,
+
+  critMultiAdd: 0,
+  critMultiInc: 0,
+  critMultiMore: 1,
+
+  flatDamageAdd: 0,
+  lifeLeech: 0,
+  hpOnHit: 0,
+  hpOnKill: 0,
+
+  bleedChance: 0,
+  knockbackChance: 0,
+  cleaveChance: 0,
+  doubleHitChance: 0,
+  executeChance: 0,
+
+  critChanceVsBoss: 0,
+  bossDamageMul: 1,
+  eliteDamageMul: 1,
+
+  fireResAdd: 0,
+  coldResAdd: 0,
+  lightResAdd: 0,
+  chaosResAdd: 0,
+  allResAdd: 0
+};
 
 /* =========================================================
    STEP 3) recalcFromGear()에서 mods 기반 계산 레이어 추가
@@ -6721,47 +6755,69 @@ function checkHit(){
   const hitLimit = 12;
   let hitDone = 0;
 
-  for(let i=0;i<enemies.length;i++){
-    const e = enemies[i];
+  function applyHitToEnemy(e, scale = 1, canExtra = true){
+    if(!e || e.hp <= 0) return 0;
 
     const dx = e.x - player.x;
     const dy = e.y - player.y;
-
-    const r = range + e.radius;
-    if(dx*dx + dy*dy > r*r) continue;
-
-    if(player.dir === "up" && dy >= 0) continue;
-    if(player.dir === "down" && dy <= 0) continue;
-    if(player.dir === "right" && dx <= 0) continue;
-    if(player.dir === "left" && dx >= 0) continue;
-
-    hitDone++;
-    if(hitDone > hitLimit) break;
-
     const len = Math.hypot(dx, dy) || 1;
     const nx = dx / len;
     const ny = dy / len;
 
-    const weaponBase = rollWeaponDamage();
-const base =
-  weaponBase
-  * (player.gear?.dmgMul ?? 1)
-  * (player.buffs?.dmgMul ?? 1);
+    const g = player.gear || {};
+    const isBoss = (e.type === "boss");
+    const isElite = !!e.isElite;
+    const bossInvul = (isBoss && e.invul > 0);
 
-// ✅ POE식 버켓: outgoing(add/inc/more) → crit → enemy_taken
-const ctxHit = buildCombatCtx("attack", e);
-const hitRes = computeFinalDamage(base, ctxHit, { canCrit:true });
-const dealt = hitRes.dealt;
+    let weaponBase = rollWeaponDamage() + (g.flatDamageAdd || 0);
 
-    const bossInvul = (e.type === "boss" && e.invul > 0);
+    let base =
+      weaponBase
+      * (g.dmgMul ?? 1)
+      * (player.buffs?.dmgMul ?? 1)
+      * scale;
 
-    if(e.invul <= 0){
-      e.hp -= dealt;
+    if(isBoss){
+      base *= (g.bossDamageMul ?? 1);
     }
+    if(isElite){
+      base *= (g.eliteDamageMul ?? 1);
+    }
+
+    const ctxHit = buildCombatCtx("attack", e);
+
+    const savedCritAdd = g.critChanceAdd || 0;
+    if(isBoss && g.critChanceVsBoss){
+      g.critChanceAdd = savedCritAdd + g.critChanceVsBoss;
+    }
+
+    const hitRes = computeFinalDamage(base, ctxHit, { canCrit:true });
+    const dealt = hitRes.dealt || 0;
+
+    g.critChanceAdd = savedCritAdd;
+
+    if(!bossInvul && e.invul <= 0){
+      if((g.executeChance || 0) > 0 && e.hp > 0){
+        const hpRatio = e.hp / Math.max(1, e.maxHp || e.hp);
+        if(hpRatio <= 0.18 && Math.random() < (g.executeChance || 0)){
+          e.hp = 0;
+        }else{
+          e.hp -= dealt;
+        }
+      }else{
+        e.hp -= dealt;
+      }
+    }
+
     emitEvent("hit", { enemy: e, dealt });
 
-    const heal = dealt * 0.05;
-    player.hp = Math.min(player.maxHp, player.hp + heal);
+    const heal =
+      dealt * (g.lifeLeech || 0)
+      + (g.hpOnHit || 0);
+
+    if(heal > 0){
+      player.hp = Math.min(player.maxHp, player.hp + heal);
+    }
 
     if(Math.random() < 0.2 && player.kiOrbs < player.maxOrbs){
       player.kiOrbs++;
@@ -6770,12 +6826,25 @@ const dealt = hitRes.dealt;
     if(bossInvul){
       spawnHitBlood(e.x, e.y, 14);
     }else{
-      e.stun = 15;
-      __enemyHitFlashStart(e, 1);
-      let ex = e.x + nx*18;
-      let ey = e.y + ny*18;
-      if(canEnemyMoveTo(e, ex, e.y)) e.x = ex;
-      if(canEnemyMoveTo(e, e.x, ey)) e.y = ey;
+      if((g.knockbackChance || 0) > 0 && Math.random() < g.knockbackChance){
+        e.stun = Math.max(e.stun || 0, 15);
+        __enemyHitFlashStart(e, 1);
+        let ex = e.x + nx * 18;
+        let ey = e.y + ny * 18;
+        if(canEnemyMoveTo(e, ex, e.y)) e.x = ex;
+        if(canEnemyMoveTo(e, e.x, ey)) e.y = ey;
+      }else{
+        e.stun = Math.max(e.stun || 0, 8);
+        __enemyHitFlashStart(e, 1);
+      }
+    }
+
+    if((g.bleedChance || 0) > 0 && !bossInvul && Math.random() < g.bleedChance){
+      e.bleed = {
+        life: 90,
+        tick: 0,
+        damage: Math.max(1, dealt * 0.18)
+      };
     }
 
     if(bossInvul) thudSound();
@@ -6795,31 +6864,76 @@ const dealt = hitRes.dealt;
     if(e.hp <= 0){
       if(e.type === "boss"){
         startBossDeath(e);
-        continue;
-      }
-      emitEvent("kill", { enemy: e, x: e.x, y: e.y, type: e.type });
-      spawnEnemyDeathBurst(e.x, e.y, e.type);
-      const dropPos = findNearestLootDropPos(e.x, e.y);
-spawnLoot(dropPos.x, dropPos.y, "normal");
-      giveXP(e);
-      killCount++;
+      }else{
+        emitEvent("kill", { enemy: e, x: e.x, y: e.y, type: e.type });
+        spawnEnemyDeathBurst(e.x, e.y, e.type);
 
-      player.hp = Math.min(player.maxHp, player.hp + 1);
+        const dropPos = findNearestLootDropPos(e.x, e.y);
+        spawnLoot(dropPos.x, dropPos.y, "normal");
 
-      if(bloodPools.length < 140){
-        bloodPools.push({
-          x: e.x, y: e.y,
-          size: 10 + Math.random()*6,
-          life: 600
-        });
-      }
+        giveXP(e);
+        killCount++;
 
-      slowMotion = 6;
+        if((g.hpOnKill || 0) > 0){
+          player.hp = Math.min(player.maxHp, player.hp + g.hpOnKill);
+        }else{
+          player.hp = Math.min(player.maxHp, player.hp + 1);
+        }
 
-      if(player.kiOrbs < player.maxOrbs){
-        player.kiOrbs++;
+        if(bloodPools.length < 140){
+          bloodPools.push({
+            x: e.x, y: e.y,
+            size: 10 + Math.random()*6,
+            life: 600
+          });
+        }
+
+        slowMotion = 6;
+
+        if(player.kiOrbs < player.maxOrbs){
+          player.kiOrbs++;
+        }
       }
     }
+
+    if(canExtra && (g.cleaveChance || 0) > 0 && !bossInvul && Math.random() < g.cleaveChance){
+      let splash = 0;
+      for(const other of enemies){
+        if(!other || other === e || other.hp <= 0) continue;
+        const ddx = other.x - e.x;
+        const ddy = other.y - e.y;
+        if(ddx*ddx + ddy*ddy > 54*54) continue;
+        applyHitToEnemy(other, 0.45, false);
+        splash++;
+        if(splash >= 3) break;
+      }
+    }
+
+    if(canExtra && (g.doubleHitChance || 0) > 0 && !bossInvul && Math.random() < g.doubleHitChance){
+      applyHitToEnemy(e, 0.55, false);
+    }
+
+    return dealt;
+  }
+
+  for(let i=0;i<enemies.length;i++){
+    const e = enemies[i];
+
+    const dx = e.x - player.x;
+    const dy = e.y - player.y;
+
+    const r = range + e.radius;
+    if(dx*dx + dy*dy > r*r) continue;
+
+    if(player.dir === "up" && dy >= 0) continue;
+    if(player.dir === "down" && dy <= 0) continue;
+    if(player.dir === "right" && dx <= 0) continue;
+    if(player.dir === "left" && dx >= 0) continue;
+
+    hitDone++;
+    if(hitDone > hitLimit) break;
+
+    applyHitToEnemy(e, 1, true);
   }
 
   enemies = enemies.filter(e => (e.hp > 0) || (e.type === "boss" && e.dead && e.deathTimer > 0));
@@ -11939,14 +12053,168 @@ function prettyItemHTML(it){
     player.gear.allResAdd = all;
   }
 
-  if(typeof recalcFromGear === "function"){
-    const __origRecalcFromGear = recalcFromGear;
-    recalcFromGear = function(){
-      const out = __origRecalcFromGear();
-      try{ __rebuildPlayerResists(); }catch(_){}
-      return out;
+ (function(){
+  if(window.__WEAPON_STAT_RUNTIME_PATCH_V1__) return;
+  window.__WEAPON_STAT_RUNTIME_PATCH_V1__ = true;
+
+  const WEAPON_STAT_KEYS = [
+    "armorAdd","maxHpAdd","hpRegen",
+    "flatDamageAdd",
+    "critChanceAdd","critChanceInc","critChanceMore",
+    "critMultiAdd","critMultiInc","critMultiMore",
+    "lifeLeech","hpOnHit","hpOnKill",
+    "bleedChance","knockbackChance","cleaveChance","doubleHitChance","executeChance",
+    "critChanceVsBoss",
+    "fireResAdd","coldResAdd","lightResAdd","chaosResAdd","allResAdd"
+  ];
+
+  function __newGearState(){
+    return {
+      armorAdd: 0,
+      maxHpAdd: 0,
+      hpRegen: 0,
+
+      dmgMul: 1,
+      dmgInc: 0,
+      dmgMore: 1,
+
+      atkSpdMul: 1,
+      atkSpdInc: 0,
+      atkSpdMore: 1,
+
+      spdMul: 1,
+      rangeMul: 1,
+      rangeInc: 0,
+      rangeMore: 1,
+
+      critChanceAdd: 0,
+      critChanceInc: 0,
+      critChanceMore: 1,
+
+      critMultiAdd: 0,
+      critMultiInc: 0,
+      critMultiMore: 1,
+
+      flatDamageAdd: 0,
+      lifeLeech: 0,
+      hpOnHit: 0,
+      hpOnKill: 0,
+
+      bleedChance: 0,
+      knockbackChance: 0,
+      cleaveChance: 0,
+      doubleHitChance: 0,
+      executeChance: 0,
+
+      critChanceVsBoss: 0,
+      bossDamageMul: 1,
+      eliteDamageMul: 1,
+
+      fireResAdd: 0,
+      coldResAdd: 0,
+      lightResAdd: 0,
+      chaosResAdd: 0,
+      allResAdd: 0
     };
   }
+
+  function __mergeStat(dst, stat, value){
+    const v = Number(value || 0);
+    if(!isFinite(v)) return;
+
+    switch(stat){
+      case "dmgMul":
+      case "atkSpdMul":
+      case "spdMul":
+      case "rangeMul":
+      case "bossDamageMul":
+      case "eliteDamageMul":
+        dst[stat] = (dst[stat] ?? 1) * v;
+        break;
+
+      case "critChanceMore":
+      case "critMultiMore":
+      case "dmgMore":
+      case "atkSpdMore":
+      case "rangeMore":
+        dst[stat] = (dst[stat] ?? 1) * v;
+        break;
+
+      default:
+        dst[stat] = (dst[stat] ?? 0) + v;
+        break;
+    }
+  }
+
+  function __pullItemStats(it, dst){
+    if(!it) return;
+    const d = (it.totalData || it.data || {});
+    const imps = Array.isArray(it.implicits) ? it.implicits : [];
+
+    for(const k of WEAPON_STAT_KEYS){
+      if(typeof d[k] === "number") __mergeStat(dst, k, d[k]);
+    }
+
+    if(typeof d.dmgMul === "number") __mergeStat(dst, "dmgMul", d.dmgMul);
+    if(typeof d.atkSpdMul === "number") __mergeStat(dst, "atkSpdMul", d.atkSpdMul);
+    if(typeof d.rangeMul === "number") __mergeStat(dst, "rangeMul", d.rangeMul);
+    if(typeof d.spdMul === "number") __mergeStat(dst, "spdMul", d.spdMul);
+
+    if(typeof d.bossDamageMul === "number") __mergeStat(dst, "bossDamageMul", d.bossDamageMul);
+    if(typeof d.eliteDamageMul === "number") __mergeStat(dst, "eliteDamageMul", d.eliteDamageMul);
+
+    for(const imp of imps){
+      if(!imp || !imp.stat) continue;
+      const stat = imp.stat;
+      const val = Number(imp.value || 0);
+      if(!isFinite(val)) continue;
+      __mergeStat(dst, stat, val);
+    }
+  }
+
+  function __rebuildExtendedGearStats(){
+    const gear = __newGearState();
+
+    try{
+      if(typeof equipment === "object" && equipment){
+        for(const key of Object.keys(equipment)){
+          const it = equipment[key];
+          if(!it) continue;
+          __pullItemStats(it, gear);
+        }
+      }
+    }catch(_){}
+
+    // increased + more → 최종 mul 산출
+    gear.dmgMul     = (gear.dmgMul ?? 1)     * (1 + (gear.dmgInc ?? 0))     * (gear.dmgMore ?? 1);
+    gear.atkSpdMul  = (gear.atkSpdMul ?? 1)  * (1 + (gear.atkSpdInc ?? 0))  * (gear.atkSpdMore ?? 1);
+    gear.rangeMul   = (gear.rangeMul ?? 1)   * (1 + (gear.rangeInc ?? 0))   * (gear.rangeMore ?? 1);
+
+    player.gear = Object.assign(__newGearState(), player.gear || {}, gear);
+
+    // recalcFromGear 본체가 buffs를 다시 만들더라도 안전하게 보정
+    const b = player.buffs || {};
+    b.dmgMul = (player.gear.dmgMul ?? 1);
+    b.atkSpdMul = (player.gear.atkSpdMul ?? 1);
+    b.rangeMul = (player.gear.rangeMul ?? 1);
+    player.buffs = b;
+  }
+
+  if(typeof recalcFromGear === "function" && !window.__recalcWeaponStatsWrapped){
+    const __orig = recalcFromGear;
+    recalcFromGear = function(){
+      const out = __orig();
+      try{ __rebuildExtendedGearStats(); }catch(_){}
+      try{ if(typeof __rebuildPlayerResists === "function") __rebuildPlayerResists(); }catch(_){}
+      return out;
+    };
+    window.__recalcWeaponStatsWrapped = true;
+  }
+
+  window.__weaponStatUtils = {
+    rebuild: __rebuildExtendedGearStats
+  };
+})();
 
   function __inferEnemyElementSplit(src){
     const tags = Array.isArray(src && src.tags) ? src.tags : [];
