@@ -3377,7 +3377,47 @@ function grantOrbByKey(key, amount=1){
   }
   return false;
 }
+function isLootDropWalkableTile(tx, ty){
+  if(ty < 0 || ty >= map.length) return false;
+  if(tx < 0 || tx >= map[ty].length) return false;
+  return isFloorTile(tx, ty);
+}
 
+function findNearestLootDropPos(x, y){
+  const baseTx = Math.floor(x / tileSize);
+  const baseTy = Math.floor(y / tileSize);
+
+  // 먼저 현재 칸
+  if(isLootDropWalkableTile(baseTx, baseTy)){
+    return {
+      x: baseTx * tileSize + tileSize * 0.5,
+      y: baseTy * tileSize + tileSize * 0.5
+    };
+  }
+
+  // 반경 확장 탐색
+  for(let r = 1; r <= 4; r++){
+    for(let oy = -r; oy <= r; oy++){
+      for(let ox = -r; ox <= r; ox++){
+        // 바깥 테두리만 검사
+        if(Math.abs(ox) !== r && Math.abs(oy) !== r) continue;
+
+        const tx = baseTx + ox;
+        const ty = baseTy + oy;
+
+        if(!isLootDropWalkableTile(tx, ty)) continue;
+
+        return {
+          x: tx * tileSize + tileSize * 0.5,
+          y: ty * tileSize + tileSize * 0.5
+        };
+      }
+    }
+  }
+
+  // 못 찾으면 원래 위치
+  return { x, y };
+}
 function spawnLoot(x, y, source="mob"){
   if(loots.length > 25) loots.splice(0, loots.length-25);
 
@@ -6759,7 +6799,8 @@ const dealt = hitRes.dealt;
       }
       emitEvent("kill", { enemy: e, x: e.x, y: e.y, type: e.type });
       spawnEnemyDeathBurst(e.x, e.y, e.type);
-      spawnLoot(e.x, e.y, "normal");
+      const dropPos = findNearestLootDropPos(e.x, e.y);
+spawnLoot(dropPos.x, dropPos.y, "normal");
       giveXP(e);
       killCount++;
 
