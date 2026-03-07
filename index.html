@@ -12099,7 +12099,6 @@ function prettyItemHTML(it){
     "lifeLeech","hpOnHit","hpOnKill",
     "bleedChance","knockbackChance","cleaveChance","doubleHitChance","executeChance",
     "critChanceVsBoss",
-    "fireResAdd","coldResAdd","lightResAdd","chaosResAdd","allResAdd"
   ];
 
   function __newGearState(){
@@ -14198,11 +14197,6 @@ try{
     aff('wpk_suf_boss_02','파멸의','wp_bossmul',52, [[5,8,18],[8,11,30],[11,14,42],[14,18,54],[18,23,66],[23,30,78]], [pctMul('bossDamageMul')]),
     aff('wpk_suf_boss_03','정벌의','wp_elitemul',54, [[6,10,16],[10,14,28],[14,18,40],[18,23,52],[23,29,64],[29,36,76]], [pctMul('eliteDamageMul')]),
     aff('wpk_suf_boss_04','대학살의','wp_hybrid_hunter',34, [[4,6,24],[6,8,36],[8,10,48],[10,13,60],[13,16,72],[16,20,82]], [pctMul('bossDamageMul'), pctMul('eliteDamageMul', 1.15)]),
-    aff('wpk_suf_res_01','수호의','wp_allres',44, [[4,6,1],[6,8,12],[8,11,24],[11,14,36],[14,18,52],[18,24,72]], [flatAdd('allResAdd')]),
-    aff('wpk_suf_res_02','용암막이의','wp_fireres',36, [[6,9,1],[9,12,12],[12,16,24],[16,20,36],[20,25,52],[25,32,72]], [flatAdd('fireResAdd')]),
-    aff('wpk_suf_res_03','서리막이의','wp_coldres',36, [[6,9,1],[9,12,12],[12,16,24],[16,20,36],[20,25,52],[25,32,72]], [flatAdd('coldResAdd')]),
-    aff('wpk_suf_res_04','뇌전막이의','wp_lightres',36, [[6,9,1],[9,12,12],[12,16,24],[16,20,36],[20,25,52],[25,32,72]], [flatAdd('lightResAdd')]),
-    aff('wpk_suf_res_05','심연막이의','wp_chaosres',28, [[5,8,12],[8,11,24],[11,14,36],[14,18,48],[18,23,60],[23,30,72]], [flatAdd('chaosResAdd')]),
     aff('wpk_suf_hybrid_01','군주의','wp_hybrid_crit_more',34, [[4,6,26],[6,8,38],[8,10,50],[10,13,62],[13,16,74],[16,20,84]], [pctMul('critChanceMore'), pctMul('critMultiMore', 0.75)]),
     aff('wpk_suf_hybrid_02','사형집행인의','wp_hybrid_execute_crit',30, [[3,5,30],[5,7,42],[7,9,54],[9,12,66],[12,15,78],[15,19,84]], [pctAdd('executeChance'), pctAdd('critMultiAdd', 6)])
   ];
