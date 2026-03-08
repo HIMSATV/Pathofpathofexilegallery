@@ -14797,6 +14797,7 @@ try{
       radius: 82,
       angleDeg: 62,
       baseMul: 1.28,
+      useTimeRatio: 1.18,
       extra: {
         doubleDamageChanceMin: 0.20,
         doubleDamageChanceMax: 0.40
@@ -14812,8 +14813,8 @@ try{
       radius: 78,
       angleDeg: 68,
       baseMul: 0.72,
-      repeats: 2,
-      repeatDelayMs: 100
+      useTimeRatio: 0.92,
+      repeats: 2
     },
 
     infernalSmash: {
@@ -14822,6 +14823,7 @@ try{
       source: "weapon",
       shape: "infernal_combo",
       tags: ["attack","melee","fire","combo"],
+      useTimeRatio: 1.00,
       comboStages: [
         { radius: 84, angleDeg: 68, damageMul: 0.95, fireConvert: 0.50, addAoe:false },
         { radius: 88, angleDeg: 72, damageMul: 1.00, fireConvert: 0.50, addAoe:false },
@@ -14856,7 +14858,18 @@ try{
 
     return 0;
   }
+  function getCurrentAttackSpeed(){
+    const mul = (player && player.buffs && typeof player.buffs.atkSpdMul === "number")
+      ? player.buffs.atkSpdMul
+      : 1;
+    return Math.max(0.2, mul);
+  }
 
+  function getSkillUseTimeMs(skill, ratio){
+    const atkSpd = getCurrentAttackSpeed();
+    const r = (typeof ratio === "number" && isFinite(ratio)) ? ratio : 1;
+    return Math.max(80, Math.round((380 * r) / atkSpd));
+  }
   function getPlayerAimAngle(){
     switch(player.dir){
       case "up": return -Math.PI * 0.5;
@@ -14941,6 +14954,10 @@ try{
      4) 스킬 실행기
   ----------------------------- */
   function useHeavyStrike(skill){
+    player.skillSwingStyle = "heavy";
+    player.skillSwingTimer = Math.max(6, Math.round(getSkillUseTimeMs(skill, 0.32) / 16));
+    player.skillSwingPower = 1.35;
+
     let base = rollSkillBaseDamage(skill);
     const p = randRangeLocal(
       skill.extra.doubleDamageChanceMin,
@@ -14952,9 +14969,15 @@ try{
   }
 
   function useDoubleStrike(skill){
+    player.skillSwingStyle = "double";
+    player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.24) / 16));
+    player.skillSwingPower = 0.92;
+
     const base = rollSkillBaseDamage(skill);
 
     applyConeDamage(skill, skill.radius, skill.angleDeg, base);
+
+    const secondHitMs = Math.max(45, Math.round(getSkillUseTimeMs(skill, 0.50)));
 
     setTimeout(()=>{
       try{
@@ -14962,17 +14985,20 @@ try{
       }catch(err){
         console.warn("doubleStrike 2nd hit failed", err);
       }
-    }, skill.repeatDelayMs || 100);
+    }, secondHitMs);
   }
 
   function useInfernalSmash(skill){
+    player.skillSwingStyle = "infernal";
+    player.skillSwingTimer = Math.max(6, Math.round(getSkillUseTimeMs(skill, 0.28) / 16));
+    player.skillSwingPower = 1.05 + ((player.infernalCombo || 0) * 0.08);
+
     player.infernalCombo = (player.infernalCombo || 0) + 1;
     if(player.infernalCombo > 3) player.infernalCombo = 1;
 
     const stage = skill.comboStages[player.infernalCombo - 1];
     const base = rollWeaponBaseDamage() * (stage.damageMul || 1);
 
-    // 물리 -> 화염 전환 packet
     let pkt = makeDamagePacket(base, 0, 0, 0, 0);
     const fc = Math.max(0, Math.min(1, stage.fireConvert || 0));
     if(fc > 0){
@@ -15018,7 +15044,7 @@ try{
      - 기존 입력을 막지 않음
      - 버튼이 실제로 눌릴 수 있게 함
   ----------------------------- */
-  (function bindAttackBtnStep1(){
+   (function bindAttackBtnStep1(){
     const btn = document.getElementById("attackBtn");
     if(!btn) return;
 
@@ -15030,19 +15056,23 @@ try{
         if(overlayCount > 0) return;
         if(__skillTapLock) return;
 
+        const activeId = player && player.skillLinks ? player.skillLinks.active : null;
+        const skill = activeId ? ACTIVE_SKILLS[activeId] : null;
+
         __skillTapLock = true;
         useActiveSkill();
 
+        const lockMs = skill ? getSkillUseTimeMs(skill, skill.useTimeRatio || 1) : 120;
+
         setTimeout(()=>{
           __skillTapLock = false;
-        }, 120);
+        }, lockMs);
       }catch(err){
         __skillTapLock = false;
         console.warn("attackBtn skill hook failed", err);
       }
     }
 
-    // 기존 버튼 이벤트를 막지 않고 '추가로'만 실행
     btn.addEventListener("pointerdown", runSkill, false);
     btn.addEventListener("touchstart", runSkill, { passive:true });
     btn.addEventListener("mousedown", runSkill, false);
