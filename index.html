@@ -1167,6 +1167,7 @@ player.weapon = {
   name: "Rusty Katana",
   min: 14,
   max: 20,
+  attackSpeed: 1.00,
   critChance: 0.06,
   critMulti: 1.50
 };
@@ -2368,171 +2369,199 @@ const ITEM_POOL = [
   /* ======================================================= */
   /* WEAPON — Two-Handed Sword (양손검) */
   /* ======================================================= */
-  { id:"rusted_greatsword", slot:"weapon", name:"녹슨 대검", baseTier:1, minIlvl:1,  weight:120, weaponType:"2h_sword",
-    tags:["weapon","attack","physical","melee","twohand","sword"],
-    baseData:{ dmgMul:1.10, spdMul:0.92, rangeMul:1.06, critChanceAdd:0.005 },
-    implicits:[ { stat:"critChanceAdd", value:0.010, text:"치명타 확률 +1%" } ],
-    descGen:(d)=>`공격 속도 ${Math.round(((d.spdMul ?? 1)-1)*100)}% / 평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
-  { id:"iron_greatsword", slot:"weapon", name:"철 대검",   baseTier:2, minIlvl:12, weight:95,  weaponType:"2h_sword",
-    tags:["weapon","attack","physical","melee","twohand","sword"],
-    baseData:{ dmgMul:1.18, spdMul:0.94, rangeMul:1.08, critChanceAdd:0.006 },
-    implicits:[ { stat:"dmgMul", value:0.04, op:"more", text:"공격 피해 4% 추가(곱)" } ],
-    descGen:(d)=>`공격 속도 ${Math.round(((d.spdMul ?? 1)-1)*100)}% / 평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
-  { id:"steel_greatsword", slot:"weapon", name:"강철 대검", baseTier:3, minIlvl:24, weight:70, weaponType:"2h_sword",
-    tags:["weapon","attack","physical","melee","twohand","sword","crit"],
-    baseData:{ dmgMul:1.30, spdMul:0.95, rangeMul:1.10, critChanceAdd:0.008 },
-    implicits:[ { stat:"critMultiAdd", value:0.10, text:"치명타 피해 +10%" } ],
-    descGen:(d)=>`치확 +${Math.round((d.critChanceAdd ?? 0)*100)}% / 치피 +${Math.round((d.critMultiAdd ?? 0)*100)}%`
-  },
-  { id:"tempered_greatsword", slot:"weapon", name:"담금질 대검", baseTier:4, minIlvl:36, weight:45, weaponType:"2h_sword",
-    tags:["weapon","attack","physical","melee","twohand","sword"],
-    baseData:{ dmgMul:1.44, spdMul:0.96, rangeMul:1.12, critChanceAdd:0.010 },
-    implicits:[ { stat:"spdMul", value:0.04, op:"more", text:"공격 속도 4% 추가(곱)" } ],
-    descGen:(d)=>`공격 속도 ${Math.round(((d.spdMul ?? 1)-1)*100)}% / 평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
-  { id:"colossus_greatsword", slot:"weapon", name:"거대 대검", baseTier:5, minIlvl:48, weight:25, weaponType:"2h_sword",
-    tags:["weapon","attack","physical","melee","twohand","sword","high_tier"],
-    baseData:{ dmgMul:1.62, spdMul:0.98, rangeMul:1.14, critChanceAdd:0.012 },
-    implicits:[ { stat:"dmgMul", value:0.06, op:"more", text:"공격 피해 6% 추가(곱)" } ],
-    descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
+  /* ======================================================= */
+/* WEAPON — Two-Handed Sword (양손검) */
+/* ======================================================= */
+{ id:"rusted_greatsword", slot:"weapon", name:"녹슨 대검", baseTier:1, minIlvl:1,  weight:120, weaponType:"2h_sword",
+  attackSpeed: 1.02,
+  tags:["weapon","attack","physical","melee","twohand","sword"],
+  baseData:{ dmgMul:1.10, spdMul:0.92, rangeMul:1.06, critChanceAdd:0.005 },
+  implicits:[ { stat:"critChanceAdd", value:0.010, text:"치명타 확률 +1%" } ],
+  descGen:(d)=>`공격 속도 ${Math.round(((d.spdMul ?? 1)-1)*100)}% / 평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
+{ id:"iron_greatsword", slot:"weapon", name:"철 대검",   baseTier:2, minIlvl:12, weight:95,  weaponType:"2h_sword",
+  attackSpeed: 1.05,
+  tags:["weapon","attack","physical","melee","twohand","sword"],
+  baseData:{ dmgMul:1.18, spdMul:0.94, rangeMul:1.08, critChanceAdd:0.006 },
+  implicits:[ { stat:"dmgMul", value:0.04, op:"more", text:"공격 피해 4% 추가(곱)" } ],
+  descGen:(d)=>`공격 속도 ${Math.round(((d.spdMul ?? 1)-1)*100)}% / 평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
+{ id:"steel_greatsword", slot:"weapon", name:"강철 대검", baseTier:3, minIlvl:24, weight:70, weaponType:"2h_sword",
+  attackSpeed: 1.08,
+  tags:["weapon","attack","physical","melee","twohand","sword","crit"],
+  baseData:{ dmgMul:1.30, spdMul:0.95, rangeMul:1.10, critChanceAdd:0.008 },
+  implicits:[ { stat:"critMultiAdd", value:0.10, text:"치명타 피해 +10%" } ],
+  descGen:(d)=>`치확 +${Math.round((d.critChanceAdd ?? 0)*100)}% / 치피 +${Math.round((d.critMultiAdd ?? 0)*100)}%`
+},
+{ id:"tempered_greatsword", slot:"weapon", name:"담금질 대검", baseTier:4, minIlvl:36, weight:45, weaponType:"2h_sword",
+  attackSpeed: 1.10,
+  tags:["weapon","attack","physical","melee","twohand","sword"],
+  baseData:{ dmgMul:1.44, spdMul:0.96, rangeMul:1.12, critChanceAdd:0.010 },
+  implicits:[ { stat:"spdMul", value:0.04, op:"more", text:"공격 속도 4% 추가(곱)" } ],
+  descGen:(d)=>`공격 속도 ${Math.round(((d.spdMul ?? 1)-1)*100)}% / 평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
+{ id:"colossus_greatsword", slot:"weapon", name:"거대 대검", baseTier:5, minIlvl:48, weight:25, weaponType:"2h_sword",
+  attackSpeed: 1.12,
+  tags:["weapon","attack","physical","melee","twohand","sword","high_tier"],
+  baseData:{ dmgMul:1.62, spdMul:0.98, rangeMul:1.14, critChanceAdd:0.012 },
+  implicits:[ { stat:"dmgMul", value:0.06, op:"more", text:"공격 피해 6% 추가(곱)" } ],
+  descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
 
-  /* ======================================================= */
-  /* WEAPON — Two-Handed Axe (양손도끼) */
-  /* ======================================================= */
-  { id:"rusted_greataxe", slot:"weapon", name:"녹슨 양손도끼", baseTier:1, minIlvl:1,  weight:115, weaponType:"2h_axe",
-    tags:["weapon","attack","physical","melee","twohand","axe"],
-    baseData:{ dmgMul:1.14, spdMul:0.88, rangeMul:1.05 },
-    implicits:[ { stat:"dmgMul", value:0.03, op:"more", text:"공격 피해 3% 추가(곱)" } ],
-    descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
-  { id:"iron_greataxe", slot:"weapon", name:"철 양손도끼", baseTier:2, minIlvl:12, weight:92, weaponType:"2h_axe",
-    tags:["weapon","attack","physical","melee","twohand","axe"],
-    baseData:{ dmgMul:1.24, spdMul:0.90, rangeMul:1.06 },
-    implicits:[ { stat:"critChanceAdd", value:0.008, text:"치명타 확률 +0.8%" } ],
-    descGen:(d)=>`치확 +${Math.round((d.critChanceAdd ?? 0)*100)}% / 평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
-  { id:"steel_greataxe", slot:"weapon", name:"강철 양손도끼", baseTier:3, minIlvl:24, weight:68, weaponType:"2h_axe",
-    tags:["weapon","attack","physical","melee","twohand","axe"],
-    baseData:{ dmgMul:1.38, spdMul:0.91, rangeMul:1.07 },
-    implicits:[ { stat:"critMultiAdd", value:0.12, text:"치명타 피해 +12%" } ],
-    descGen:(d)=>`치피 +${Math.round((d.critMultiAdd ?? 0)*100)}%`
-  },
-  { id:"executioner_greataxe", slot:"weapon", name:"처형자의 양손도끼", baseTier:4, minIlvl:36, weight:42, weaponType:"2h_axe",
-    tags:["weapon","attack","physical","melee","twohand","axe","elite"],
-    baseData:{ dmgMul:1.54, spdMul:0.92, rangeMul:1.08 },
-    implicits:[ { stat:"dmgMul", value:0.05, op:"more", text:"공격 피해 5% 추가(곱)" } ],
-    descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
-  { id:"behemoth_greataxe", slot:"weapon", name:"거수의 양손도끼", baseTier:5, minIlvl:48, weight:22, weaponType:"2h_axe",
-    tags:["weapon","attack","physical","melee","twohand","axe","high_tier"],
-    baseData:{ dmgMul:1.74, spdMul:0.93, rangeMul:1.09 },
-    implicits:[ { stat:"dmgMul", value:0.07, op:"more", text:"공격 피해 7% 추가(곱)" } ],
-    descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
+/* ======================================================= */
+/* WEAPON — Two-Handed Axe (양손도끼) */
+/* ======================================================= */
+{ id:"rusted_greataxe", slot:"weapon", name:"녹슨 양손도끼", baseTier:1, minIlvl:1,  weight:115, weaponType:"2h_axe",
+  attackSpeed: 0.90,
+  tags:["weapon","attack","physical","melee","twohand","axe"],
+  baseData:{ dmgMul:1.14, spdMul:0.88, rangeMul:1.05 },
+  implicits:[ { stat:"dmgMul", value:0.03, op:"more", text:"공격 피해 3% 추가(곱)" } ],
+  descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
+{ id:"iron_greataxe", slot:"weapon", name:"철 양손도끼", baseTier:2, minIlvl:12, weight:92, weaponType:"2h_axe",
+  attackSpeed: 0.93,
+  tags:["weapon","attack","physical","melee","twohand","axe"],
+  baseData:{ dmgMul:1.24, spdMul:0.90, rangeMul:1.06 },
+  implicits:[ { stat:"critChanceAdd", value:0.008, text:"치명타 확률 +0.8%" } ],
+  descGen:(d)=>`치확 +${Math.round((d.critChanceAdd ?? 0)*100)}% / 평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
+{ id:"steel_greataxe", slot:"weapon", name:"강철 양손도끼", baseTier:3, minIlvl:24, weight:68, weaponType:"2h_axe",
+  attackSpeed: 0.95,
+  tags:["weapon","attack","physical","melee","twohand","axe"],
+  baseData:{ dmgMul:1.38, spdMul:0.91, rangeMul:1.07 },
+  implicits:[ { stat:"critMultiAdd", value:0.12, text:"치명타 피해 +12%" } ],
+  descGen:(d)=>`치피 +${Math.round((d.critMultiAdd ?? 0)*100)}%`
+},
+{ id:"executioner_greataxe", slot:"weapon", name:"처형자의 양손도끼", baseTier:4, minIlvl:36, weight:42, weaponType:"2h_axe",
+  attackSpeed: 0.97,
+  tags:["weapon","attack","physical","melee","twohand","axe","elite"],
+  baseData:{ dmgMul:1.54, spdMul:0.92, rangeMul:1.08 },
+  implicits:[ { stat:"dmgMul", value:0.05, op:"more", text:"공격 피해 5% 추가(곱)" } ],
+  descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
+{ id:"behemoth_greataxe", slot:"weapon", name:"거수의 양손도끼", baseTier:5, minIlvl:48, weight:22, weaponType:"2h_axe",
+  attackSpeed: 1.00,
+  tags:["weapon","attack","physical","melee","twohand","axe","high_tier"],
+  baseData:{ dmgMul:1.74, spdMul:0.93, rangeMul:1.09 },
+  implicits:[ { stat:"dmgMul", value:0.07, op:"more", text:"공격 피해 7% 추가(곱)" } ],
+  descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
 
-  /* ======================================================= */
-  /* WEAPON — Two-Handed Mace (양손철퇴) */
-  /* ======================================================= */
-  { id:"rusted_greatmace", slot:"weapon", name:"녹슨 양손철퇴", baseTier:1, minIlvl:1,  weight:110, weaponType:"2h_mace",
-    tags:["weapon","attack","physical","melee","twohand","mace"],
-    baseData:{ dmgMul:1.16, spdMul:0.86, rangeMul:1.03 },
-    implicits:[ { stat:"armorAdd", value:6, text:"방어력 +6" } ],
-    descGen:(d)=>`공격 속도 ${Math.round(((d.spdMul ?? 1)-1)*100)}% / 평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
-  { id:"iron_greatmace", slot:"weapon", name:"철 양손철퇴", baseTier:2, minIlvl:12, weight:88, weaponType:"2h_mace",
-    tags:["weapon","attack","physical","melee","twohand","mace"],
-    baseData:{ dmgMul:1.30, spdMul:0.87, rangeMul:1.04 },
-    implicits:[ { stat:"maxHpAdd", value:10, text:"최대 체력 +10" } ],
-    descGen:(d)=>`최대 체력 +${Math.floor(d.maxHpAdd ?? 0)}`
-  },
-  { id:"steel_greatmace", slot:"weapon", name:"강철 양손철퇴", baseTier:3, minIlvl:24, weight:64, weaponType:"2h_mace",
-    tags:["weapon","attack","physical","melee","twohand","mace"],
-    baseData:{ dmgMul:1.46, spdMul:0.88, rangeMul:1.05 },
-    implicits:[ { stat:"critMultiAdd", value:0.08, text:"치명타 피해 +8%" } ],
-    descGen:(d)=>`치피 +${Math.round((d.critMultiAdd ?? 0)*100)}%`
-  },
-  { id:"crusher_greatmace", slot:"weapon", name:"분쇄자의 양손철퇴", baseTier:4, minIlvl:36, weight:40, weaponType:"2h_mace",
-    tags:["weapon","attack","physical","melee","twohand","mace","boss"],
-    baseData:{ dmgMul:1.64, spdMul:0.89, rangeMul:1.06 },
-    implicits:[ { stat:"dmgMul", value:0.05, op:"more", text:"공격 피해 5% 추가(곱)" } ],
-    descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
-  { id:"titan_greatmace", slot:"weapon", name:"거인의 양손철퇴", baseTier:5, minIlvl:48, weight:20, weaponType:"2h_mace",
-    tags:["weapon","attack","physical","melee","twohand","mace","high_tier"],
-    baseData:{ dmgMul:1.86, spdMul:0.90, rangeMul:1.07 },
-    implicits:[ { stat:"maxHpAdd", value:18, text:"최대 체력 +18" } ],
-    descGen:(d)=>`최대 체력 +${Math.floor(d.maxHpAdd ?? 0)}`
-  },
+/* ======================================================= */
+/* WEAPON — Two-Handed Mace (양손철퇴) */
+/* ======================================================= */
+{ id:"rusted_greatmace", slot:"weapon", name:"녹슨 양손철퇴", baseTier:1, minIlvl:1,  weight:110, weaponType:"2h_mace",
+  attackSpeed: 0.84,
+  tags:["weapon","attack","physical","melee","twohand","mace"],
+  baseData:{ dmgMul:1.16, spdMul:0.86, rangeMul:1.03 },
+  implicits:[ { stat:"armorAdd", value:6, text:"방어력 +6" } ],
+  descGen:(d)=>`공격 속도 ${Math.round(((d.spdMul ?? 1)-1)*100)}% / 평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
+{ id:"iron_greatmace", slot:"weapon", name:"철 양손철퇴", baseTier:2, minIlvl:12, weight:88, weaponType:"2h_mace",
+  attackSpeed: 0.87,
+  tags:["weapon","attack","physical","melee","twohand","mace"],
+  baseData:{ dmgMul:1.30, spdMul:0.87, rangeMul:1.04 },
+  implicits:[ { stat:"maxHpAdd", value:10, text:"최대 체력 +10" } ],
+  descGen:(d)=>`최대 체력 +${Math.floor(d.maxHpAdd ?? 0)}`
+},
+{ id:"steel_greatmace", slot:"weapon", name:"강철 양손철퇴", baseTier:3, minIlvl:24, weight:64, weaponType:"2h_mace",
+  attackSpeed: 0.90,
+  tags:["weapon","attack","physical","melee","twohand","mace"],
+  baseData:{ dmgMul:1.46, spdMul:0.88, rangeMul:1.05 },
+  implicits:[ { stat:"critMultiAdd", value:0.08, text:"치명타 피해 +8%" } ],
+  descGen:(d)=>`치피 +${Math.round((d.critMultiAdd ?? 0)*100)}%`
+},
+{ id:"crusher_greatmace", slot:"weapon", name:"분쇄자의 양손철퇴", baseTier:4, minIlvl:36, weight:40, weaponType:"2h_mace",
+  attackSpeed: 0.93,
+  tags:["weapon","attack","physical","melee","twohand","mace","boss"],
+  baseData:{ dmgMul:1.64, spdMul:0.89, rangeMul:1.06 },
+  implicits:[ { stat:"dmgMul", value:0.05, op:"more", text:"공격 피해 5% 추가(곱)" } ],
+  descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
+{ id:"titan_greatmace", slot:"weapon", name:"거인의 양손철퇴", baseTier:5, minIlvl:48, weight:20, weaponType:"2h_mace",
+  attackSpeed: 0.96,
+  tags:["weapon","attack","physical","melee","twohand","mace","high_tier"],
+  baseData:{ dmgMul:1.86, spdMul:0.90, rangeMul:1.07 },
+  implicits:[ { stat:"maxHpAdd", value:18, text:"최대 체력 +18" } ],
+  descGen:(d)=>`최대 체력 +${Math.floor(d.maxHpAdd ?? 0)}`
+},
 
-  /* ======================================================= */
-  /* WEAPON — Staff (지팡이) */
-  /* ======================================================= */
-  { id:"ash_staff", slot:"weapon", name:"잿빛 지팡이", baseTier:1, minIlvl:1,  weight:120, weaponType:"staff",
-    tags:["weapon","attack","melee","twohand","staff"],
-    baseData:{ dmgMul:1.04, spdMul:1.00, rangeMul:1.12 },
-    implicits:[ { stat:"rangeMul", value:0.04, op:"more", text:"공격 범위 4% 추가(곱)" } ],
-    descGen:(d)=>`공격 범위 ${Math.round(((d.rangeMul ?? 1)-1)*100)}%`
-  },
-  { id:"oak_staff", slot:"weapon", name:"참나무 지팡이", baseTier:2, minIlvl:12, weight:95, weaponType:"staff",
-    tags:["weapon","attack","melee","twohand","staff"],
-    baseData:{ dmgMul:1.10, spdMul:1.02, rangeMul:1.14 },
-    implicits:[ { stat:"hpRegen", value:0.25, text:"재생 +0.25/s" } ],
-    descGen:(d)=>`재생 +${(d.hpRegen ?? 0).toFixed(2)}/s`
-  },
-  { id:"ebony_staff", slot:"weapon", name:"흑단 지팡이", baseTier:3, minIlvl:24, weight:70, weaponType:"staff",
-    tags:["weapon","attack","melee","twohand","staff","crit"],
-    baseData:{ dmgMul:1.18, spdMul:1.03, rangeMul:1.16, critChanceAdd:0.008 },
-    implicits:[ { stat:"critChanceAdd", value:0.012, text:"치명타 확률 +1.2%" } ],
-    descGen:(d)=>`치확 +${Math.round((d.critChanceAdd ?? 0)*100)}%`
-  },
-  { id:"elder_staff", slot:"weapon", name:"장로의 지팡이", baseTier:4, minIlvl:36, weight:45, weaponType:"staff",
-    tags:["weapon","attack","melee","twohand","staff","elemental"],
-    baseData:{ dmgMul:1.26, spdMul:1.04, rangeMul:1.18 },
-    implicits:[ { stat:"elemDmgMul", value:0.06, op:"more", text:"원소 피해 6% 추가(곱)" } ]
-  },
-  { id:"astral_staff", slot:"weapon", name:"성운 지팡이", baseTier:5, minIlvl:48, weight:25, weaponType:"staff",
-    tags:["weapon","attack","melee","twohand","staff","high_tier"],
-    baseData:{ dmgMul:1.34, spdMul:1.05, rangeMul:1.20 },
-    implicits:[ { stat:"rangeMul", value:0.06, op:"more", text:"공격 범위 6% 추가(곱)" } ],
-    descGen:(d)=>`공격 범위 ${Math.round(((d.rangeMul ?? 1)-1)*100)}%`
-  },
+/* ======================================================= */
+/* WEAPON — Staff (지팡이) */
+/* ======================================================= */
+{ id:"ash_staff", slot:"weapon", name:"잿빛 지팡이", baseTier:1, minIlvl:1,  weight:120, weaponType:"staff",
+  attackSpeed: 1.08,
+  tags:["weapon","attack","melee","twohand","staff"],
+  baseData:{ dmgMul:1.04, spdMul:1.00, rangeMul:1.12 },
+  implicits:[ { stat:"rangeMul", value:0.04, op:"more", text:"공격 범위 4% 추가(곱)" } ],
+  descGen:(d)=>`공격 범위 ${Math.round(((d.rangeMul ?? 1)-1)*100)}%`
+},
+{ id:"oak_staff", slot:"weapon", name:"참나무 지팡이", baseTier:2, minIlvl:12, weight:95, weaponType:"staff",
+  attackSpeed: 1.10,
+  tags:["weapon","attack","melee","twohand","staff"],
+  baseData:{ dmgMul:1.10, spdMul:1.02, rangeMul:1.14 },
+  implicits:[ { stat:"hpRegen", value:0.25, text:"재생 +0.25/s" } ],
+  descGen:(d)=>`재생 +${(d.hpRegen ?? 0).toFixed(2)}/s`
+},
+{ id:"ebony_staff", slot:"weapon", name:"흑단 지팡이", baseTier:3, minIlvl:24, weight:70, weaponType:"staff",
+  attackSpeed: 1.12,
+  tags:["weapon","attack","melee","twohand","staff","crit"],
+  baseData:{ dmgMul:1.18, spdMul:1.03, rangeMul:1.16, critChanceAdd:0.008 },
+  implicits:[ { stat:"critChanceAdd", value:0.012, text:"치명타 확률 +1.2%" } ],
+  descGen:(d)=>`치확 +${Math.round((d.critChanceAdd ?? 0)*100)}%`
+},
+{ id:"elder_staff", slot:"weapon", name:"장로의 지팡이", baseTier:4, minIlvl:36, weight:45, weaponType:"staff",
+  attackSpeed: 1.14,
+  tags:["weapon","attack","melee","twohand","staff","elemental"],
+  baseData:{ dmgMul:1.26, spdMul:1.04, rangeMul:1.18 },
+  implicits:[ { stat:"elemDmgMul", value:0.06, op:"more", text:"원소 피해 6% 추가(곱)" } ]
+},
+{ id:"astral_staff", slot:"weapon", name:"성운 지팡이", baseTier:5, minIlvl:48, weight:25, weaponType:"staff",
+  attackSpeed: 1.16,
+  tags:["weapon","attack","melee","twohand","staff","high_tier"],
+  baseData:{ dmgMul:1.34, spdMul:1.05, rangeMul:1.20 },
+  implicits:[ { stat:"rangeMul", value:0.06, op:"more", text:"공격 범위 6% 추가(곱)" } ],
+  descGen:(d)=>`공격 범위 ${Math.round(((d.rangeMul ?? 1)-1)*100)}%`
+},
 
-  /* ======================================================= */
-  /* WEAPON — Warstaff (전쟁지팡이) */
-  /* ======================================================= */
-  { id:"rusted_warstaff", slot:"weapon", name:"녹슨 전쟁지팡이", baseTier:1, minIlvl:1,  weight:110, weaponType:"warstaff",
-    tags:["weapon","attack","melee","twohand","warstaff","staff"],
-    baseData:{ dmgMul:1.12, spdMul:0.98, rangeMul:1.12, critChanceAdd:0.006 },
-    implicits:[ { stat:"critMultiAdd", value:0.08, text:"치명타 피해 +8%" } ],
-    descGen:(d)=>`치피 +${Math.round((d.critMultiAdd ?? 0)*100)}%`
-  },
-  { id:"iron_warstaff", slot:"weapon", name:"철 전쟁지팡이", baseTier:2, minIlvl:12, weight:88, weaponType:"warstaff",
-    tags:["weapon","attack","melee","twohand","warstaff","staff"],
-    baseData:{ dmgMul:1.22, spdMul:0.99, rangeMul:1.14, critChanceAdd:0.008 },
-    implicits:[ { stat:"dmgMul", value:0.04, op:"more", text:"공격 피해 4% 추가(곱)" } ],
-    descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
-  { id:"steel_warstaff", slot:"weapon", name:"강철 전쟁지팡이", baseTier:3, minIlvl:24, weight:64, weaponType:"warstaff",
-    tags:["weapon","attack","melee","twohand","warstaff","staff","crit"],
-    baseData:{ dmgMul:1.34, spdMul:1.00, rangeMul:1.16, critChanceAdd:0.010 },
-    implicits:[ { stat:"critChanceAdd", value:0.012, text:"치명타 확률 +1.2%" } ],
-    descGen:(d)=>`치확 +${Math.round((d.critChanceAdd ?? 0)*100)}%`
-  },
-  { id:"warlord_warstaff", slot:"weapon", name:"군주의 전쟁지팡이", baseTier:4, minIlvl:36, weight:40, weaponType:"warstaff",
-    tags:["weapon","attack","melee","twohand","warstaff","staff","boss"],
-    baseData:{ dmgMul:1.48, spdMul:1.01, rangeMul:1.18, critChanceAdd:0.010 },
-    implicits:[ { stat:"dmgMul", value:0.05, op:"more", text:"공격 피해 5% 추가(곱)" } ],
-    descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
-  },
-  { id:"titan_warstaff", slot:"weapon", name:"거인의 전쟁지팡이", baseTier:5, minIlvl:48, weight:22, weaponType:"warstaff",
-    tags:["weapon","attack","melee","twohand","warstaff","staff","high_tier"],
-    baseData:{ dmgMul:1.66, spdMul:1.02, rangeMul:1.20, critChanceAdd:0.012 },
-    implicits:[ { stat:"critMultiAdd", value:0.12, text:"치명타 피해 +12%" } ],
-    descGen:(d)=>`치피 +${Math.round((d.critMultiAdd ?? 0)*100)}%`
-  },
+/* ======================================================= */
+/* WEAPON — Warstaff (전쟁지팡이) */
+/* ======================================================= */
+{ id:"rusted_warstaff", slot:"weapon", name:"녹슨 전쟁지팡이", baseTier:1, minIlvl:1,  weight:110, weaponType:"warstaff",
+  attackSpeed: 0.96,
+  tags:["weapon","attack","melee","twohand","warstaff","staff"],
+  baseData:{ dmgMul:1.12, spdMul:0.98, rangeMul:1.12, critChanceAdd:0.006 },
+  implicits:[ { stat:"critMultiAdd", value:0.08, text:"치명타 피해 +8%" } ],
+  descGen:(d)=>`치피 +${Math.round((d.critMultiAdd ?? 0)*100)}%`
+},
+{ id:"iron_warstaff", slot:"weapon", name:"철 전쟁지팡이", baseTier:2, minIlvl:12, weight:88, weaponType:"warstaff",
+  attackSpeed: 0.99,
+  tags:["weapon","attack","melee","twohand","warstaff","staff"],
+  baseData:{ dmgMul:1.22, spdMul:0.99, rangeMul:1.14, critChanceAdd:0.008 },
+  implicits:[ { stat:"dmgMul", value:0.04, op:"more", text:"공격 피해 4% 추가(곱)" } ],
+  descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
+{ id:"steel_warstaff", slot:"weapon", name:"강철 전쟁지팡이", baseTier:3, minIlvl:24, weight:64, weaponType:"warstaff",
+  attackSpeed: 1.02,
+  tags:["weapon","attack","melee","twohand","warstaff","staff","crit"],
+  baseData:{ dmgMul:1.34, spdMul:1.00, rangeMul:1.16, critChanceAdd:0.010 },
+  implicits:[ { stat:"critChanceAdd", value:0.012, text:"치명타 확률 +1.2%" } ],
+  descGen:(d)=>`치확 +${Math.round((d.critChanceAdd ?? 0)*100)}%`
+},
+{ id:"warlord_warstaff", slot:"weapon", name:"군주의 전쟁지팡이", baseTier:4, minIlvl:36, weight:40, weaponType:"warstaff",
+  attackSpeed: 1.05,
+  tags:["weapon","attack","melee","twohand","warstaff","staff","boss"],
+  baseData:{ dmgMul:1.48, spdMul:1.01, rangeMul:1.18, critChanceAdd:0.010 },
+  implicits:[ { stat:"dmgMul", value:0.05, op:"more", text:"공격 피해 5% 추가(곱)" } ],
+  descGen:(d)=>`평타 피해 ${Math.round(((d.dmgMul ?? 1)-1)*100)}%`
+},
+{ id:"titan_warstaff", slot:"weapon", name:"거인의 전쟁지팡이", baseTier:5, minIlvl:48, weight:22, weaponType:"warstaff",
+  attackSpeed: 1.08,
+  tags:["weapon","attack","melee","twohand","warstaff","staff","high_tier"],
+  baseData:{ dmgMul:1.66, spdMul:1.02, rangeMul:1.20, critChanceAdd:0.012 },
+  implicits:[ { stat:"critMultiAdd", value:0.12, text:"치명타 피해 +12%" } ],
+  descGen:(d)=>`치피 +${Math.round((d.critMultiAdd ?? 0)*100)}%`
+},
 
   /* ======================================================= */
   /* HELM (투구) */
@@ -4201,20 +4230,51 @@ function mapBuffTypeToStat(type){
   if(type === "hpRegen")      return "hpRegen";
   return null;
 }
+function getEquippedWeaponAttackSpeed(){
+  try{
+    const eq = (typeof equipment !== "undefined" && equipment) ? equipment : null;
+    const w = eq && eq.weapon ? eq.weapon : null;
 
+    // 1) 장착 아이템 인스턴스에 직접 attackSpeed가 있으면 우선
+    if(w && typeof w.attackSpeed === "number" && isFinite(w.attackSpeed)){
+      return Math.max(0.2, w.attackSpeed);
+    }
+
+    // 2) 템플릿(베이스)에 attackSpeed가 있으면 사용
+    if(w && typeof getItemTemplateById === "function"){
+      const tmpl = getItemTemplateById(w.baseId || w.id);
+      if(tmpl && typeof tmpl.attackSpeed === "number" && isFinite(tmpl.attackSpeed)){
+        return Math.max(0.2, tmpl.attackSpeed);
+      }
+    }
+
+    // 3) fallback: 시작 무기(player.weapon)
+    if(player && player.weapon && typeof player.weapon.attackSpeed === "number" && isFinite(player.weapon.attackSpeed)){
+      return Math.max(0.2, player.weapon.attackSpeed);
+    }
+  }catch(err){
+    console.warn("getEquippedWeaponAttackSpeed failed", err);
+  }
+
+  return 1;
+}
 function updateBuffs(target){
   if(!target.activeBuffs) target.activeBuffs = [];
   target.buffs = defaultBuffStats();
 
-  if(target === player){
-    target.buffs.dmgMul   *= (player.gear.dmgMul ?? 1);
-    target.buffs.rangeMul *= (player.gear.rangeMul ?? 1);
-    target.buffs.spdMul    *= (player.gear.spdMul ?? 1);
-    target.buffs.atkSpdMul *= (player.gear.atkSpdMul ?? 1);
-    target.buffs.armorAdd += (player.gear.armorAdd ?? 0);
-    target.buffs.maxHpAdd += (player.gear.maxHpAdd ?? 0);
-    target.buffs.hpRegen  += (player.gear.hpRegen ?? 0);
-  }
+ if(target === player){
+  target.buffs.dmgMul   *= (player.gear.dmgMul ?? 1);
+  target.buffs.rangeMul *= (player.gear.rangeMul ?? 1);
+  target.buffs.spdMul    *= (player.gear.spdMul ?? 1);
+  target.buffs.atkSpdMul *= (player.gear.atkSpdMul ?? 1);
+
+  // ✅ 무기 기본 공격속도 반영
+  target.buffs.atkSpdMul *= getEquippedWeaponAttackSpeed();
+
+  target.buffs.armorAdd += (player.gear.armorAdd ?? 0);
+  target.buffs.maxHpAdd += (player.gear.maxHpAdd ?? 0);
+  target.buffs.hpRegen  += (player.gear.hpRegen ?? 0);
+}
 
   for(let i = target.activeBuffs.length - 1; i >= 0; i--){
     const b = target.activeBuffs[i];
