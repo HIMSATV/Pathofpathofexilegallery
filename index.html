@@ -15059,11 +15059,14 @@ try{
         const activeId = player && player.skillLinks ? player.skillLinks.active : null;
         const skill = activeId ? ACTIVE_SKILLS[activeId] : null;
 
-        __skillTapLock = true;
-        useActiveSkill();
+                __skillTapLock = true;
+        if(typeof window.useActiveSkill === "function"){
+          window.useActiveSkill();
+        }else if(typeof useActiveSkill === "function"){
+          useActiveSkill();
+        }
 
         const lockMs = skill ? getSkillUseTimeMs(skill, skill.useTimeRatio || 1) : 120;
-
         setTimeout(()=>{
           __skillTapLock = false;
         }, lockMs);
