@@ -15440,7 +15440,6 @@ function useLightningBeam(skill){
   const aim = getSpellAim(520);
   const base = rollSpellBaseDamage(skill);
 
-  // 무기 쪽에서 시작
   const muzzle = 32;
   const sx = player.x + aim.x * muzzle;
   const sy = player.y + aim.y * muzzle;
@@ -15469,15 +15468,15 @@ function useLightningBeam(skill){
     }
   }
 
-
-    // 간단 시각효과
-        window.__lastLightningBeam = {
-      x1: sx,
-      y1: sy,
-      x2: sx + aim.x * skill.beamLength,
-      y2: sy + aim.y * skill.beamLength,
-      life: 6
-    };
+  // 간단 시각효과
+  window.__lastLightningBeam = {
+    x1: sx,
+    y1: sy,
+    x2: sx + aim.x * skill.beamLength,
+    y2: sy + aim.y * skill.beamLength,
+    life: 6
+  };
+}
   }
 
   function updateLightningBeamFx(){
