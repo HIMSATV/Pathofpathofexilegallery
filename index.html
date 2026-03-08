@@ -14774,7 +14774,7 @@ try{
   ----------------------------- */
   try{
     player.skillLinks = player.skillLinks || {
-      active: "moltenStrike",
+      active: "iceNova",
       supports: [null, null, null, null, null]
     };
     player.infernalCombo = player.infernalCombo || 0;
@@ -15582,8 +15582,8 @@ ctx.lineTo(camX + p2.x - pp.x, camY + p2.y - pp.y + 20);
 
       spawnSkillProjectile({
         kind: "moltenShard",
-        x: player.x + dx * 18,
-        y: player.y + dy * 18,
+        x: player.x + dx * 32,
+        y: player.y + dy * 32,
         dx, dy,
         speed: 7.2,
         life: 55,
