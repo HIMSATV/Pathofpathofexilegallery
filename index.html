@@ -15088,7 +15088,45 @@ try{
 (function(){
   if(window.__SKILL_STEP2_PATCH__) return;
   window.__SKILL_STEP2_PATCH__ = true;
+function findNearestEnemy(range){
+  let best = null;
+  let bestDist = Infinity;
 
+  for(const e of enemies){
+    if(!e || e.hp <= 0) continue;
+
+    const dx = e.x - player.x;
+    const dy = e.y - player.y;
+    const d = Math.hypot(dx,dy);
+
+    if(d > range) continue;
+
+    if(d < bestDist){
+      bestDist = d;
+      best = e;
+    }
+  }
+
+  return best;
+}
+
+function getSpellAim(range){
+  const target = findNearestEnemy(range || 320);
+
+  if(target){
+    const dx = target.x - player.x;
+    const dy = target.y - player.y;
+    const len = Math.hypot(dx,dy) || 1;
+
+    return {
+      x: dx/len,
+      y: dy/len,
+      angle: Math.atan2(dy,dx)
+    };
+  }
+
+  return getAimUnit(); // 적 없으면 기존 방향
+}
   /* -----------------------------
      1) 액티브 스킬 추가
   ----------------------------- */
@@ -15380,7 +15418,7 @@ try{
     player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.24) / 16));
     player.skillSwingPower = 1.08;
 
-    const aim = getAimUnit();
+    const aim = getAimUnit(420);
     const base = rollSpellBaseDamage(skill);
 
     for(const e of enemies){
@@ -15459,7 +15497,7 @@ try{
     player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.22) / 16));
     player.skillSwingPower = 0.90;
 
-    const aim = getAimUnit();
+    const aim = getAimUnit(360);
     const base = rollSpellBaseDamage(skill);
 
     spawnSkillProjectile({
