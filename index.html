@@ -15432,38 +15432,43 @@ try{
   /* -----------------------------
      4) 번개 빔
   ----------------------------- */
-  function useLightningBeam(skill){
-    player.skillSwingStyle = "infernal";
-    player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.24) / 16));
-    player.skillSwingPower = 1.08;
+function useLightningBeam(skill){
+  player.skillSwingStyle = "infernal";
+  player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.24) / 16));
+  player.skillSwingPower = 1.08;
 
-    const aim = getSpellAim(520);
-    const base = rollSpellBaseDamage(skill);
-    const muzzle = 32;
-    const sx = player.x + aim.x * muzzle;
-    const sy = player.y + aim.y * muzzle;
-    for(const e of enemies){
-      if(!e || e.hp <= 0) continue;
+  const aim = getSpellAim(520);
+  const base = rollSpellBaseDamage(skill);
 
-            const ex = e.x - sx;
-      const ey = e.y - sy;
-      const forward = ex * aim.x + ey * aim.y;
-      if(forward < 0 || forward > skill.beamLength) continue;
+  // 무기 쪽에서 시작
+  const muzzle = 32;
+  const sx = player.x + aim.x * muzzle;
+  const sy = player.y + aim.y * muzzle;
 
-      const side = Math.abs(ex * (-aim.y) + ey * aim.x);
-      const er = (typeof getEnemyRadius === "function") ? getEnemyRadius(e) : (e.radius || 14);
-      if(side > (skill.beamWidth * 0.5) + er) continue;
+  for(const e of enemies){
+    if(!e || e.hp <= 0) continue;
 
-      const ctx = buildCombatCtx(skill.id, e);
-      ctx.tags = mergeTags(ctx.tags || [], skill.tags || []);
-      const result = computeFinalDamage(base, ctx);
+    const ex = e.x - sx;
+    const ey = e.y - sy;
 
-      if(typeof damageEnemyDirect === "function"){
-        damageEnemyDirect(e, result.dealt);
-      }else{
-        e.hp -= result.dealt;
-      }
+    const forward = ex * aim.x + ey * aim.y;
+    if(forward < 0 || forward > skill.beamLength) continue;
+
+    const side = Math.abs(ex * (-aim.y) + ey * aim.x);
+    const er = (typeof getEnemyRadius === "function") ? getEnemyRadius(e) : (e.radius || 14);
+    if(side > (skill.beamWidth * 0.5) + er) continue;
+
+    const ctx = buildCombatCtx(skill.id, e);
+    ctx.tags = mergeTags(ctx.tags || [], skill.tags || []);
+    const result = computeFinalDamage(base, ctx);
+
+    if(typeof damageEnemyDirect === "function"){
+      damageEnemyDirect(e, result.dealt);
+    }else{
+      e.hp -= result.dealt;
     }
+  }
+}
 
     // 간단 시각효과
     window.__lastLightningBeam = {
