@@ -14698,6 +14698,289 @@ try{
     window.__POE_ELEM_AFFIX_PATCH__ = true;
   }
 })();
+/* =========================================================
+   STEP 1 SKILL PATCH
+   - 공용 6링크(1차)
+   - 액티브 스킬 3종:
+     heavyStrike / doubleStrike / infernalSmash
+   - 공격 버튼 -> 액티브 스킬
+   ========================================================= */
+(function(){
+  if(window.__SKILL_STEP1_PATCH__) return;
+  window.__SKILL_STEP1_PATCH__ = true;
+
+  /* -----------------------------
+     0) player 공용 6링크 초기화
+  ----------------------------- */
+  try{
+    player.skillLinks = player.skillLinks || {
+      active: "heavyStrike",
+      supports: [null, null, null, null, null]
+    };
+    player.infernalCombo = player.infernalCombo || 0;
+    player.__skillCooldowns = player.__skillCooldowns || {};
+  }catch(err){
+    console.warn("skill init failed", err);
+  }
+
+  /* -----------------------------
+     1) 액티브 스킬 데이터 (1단계)
+  ----------------------------- */
+  window.ACTIVE_SKILLS = window.ACTIVE_SKILLS || {};
+  Object.assign(window.ACTIVE_SKILLS, {
+    heavyStrike: {
+      id: "heavyStrike",
+      name: "묵직한 타격",
+      source: "weapon",
+      shape: "cone",
+      tags: ["attack","melee","strike","physical"],
+      radius: 82,
+      angleDeg: 62,
+      baseMul: 1.28,
+      extra: {
+        doubleDamageChanceMin: 0.20,
+        doubleDamageChanceMax: 0.40
+      }
+    },
+
+    doubleStrike: {
+      id: "doubleStrike",
+      name: "이중 타격",
+      source: "weapon",
+      shape: "double_cone",
+      tags: ["attack","melee","strike","physical"],
+      radius: 78,
+      angleDeg: 68,
+      baseMul: 0.72,
+      repeats: 2,
+      repeatDelayMs: 100
+    },
+
+    infernalSmash: {
+      id: "infernalSmash",
+      name: "지옥불 맹타",
+      source: "weapon",
+      shape: "infernal_combo",
+      tags: ["attack","melee","fire","combo"],
+      comboStages: [
+        { radius: 84, angleDeg: 68, damageMul: 0.95, fireConvert: 0.50, addAoe:false },
+        { radius: 88, angleDeg: 72, damageMul: 1.00, fireConvert: 0.50, addAoe:false },
+        { radius:120, angleDeg:100, damageMul: 1.18, fireConvert: 1.00, addAoe:true  }
+      ]
+    }
+  });
+
+  /* -----------------------------
+     2) 유틸
+  ----------------------------- */
+  function randRangeLocal(a,b){
+    if(typeof randRange === "function") return randRange(a,b);
+    return a + Math.random() * (b-a);
+  }
+
+  function rollWeaponBaseDamage(){
+    const w = (player && player.weapon) ? player.weapon : { min:1, max:2 };
+    return randRangeLocal(w.min || 1, w.max || 2);
+  }
+
+  function rollSkillBaseDamage(skill){
+    if(!skill) return 0;
+
+    if(skill.source === "weapon"){
+      return rollWeaponBaseDamage() * (skill.baseMul || 1);
+    }
+
+    if(skill.source === "spell"){
+      return randRangeLocal(skill.flatMin || 0, skill.flatMax || 0) * (skill.baseMul || 1);
+    }
+
+    return 0;
+  }
+
+  function getPlayerAimAngle(){
+    switch(player.dir){
+      case "up": return -Math.PI * 0.5;
+      case "down": return Math.PI * 0.5;
+      case "right": return 0;
+      case "left":
+      default: return Math.PI;
+    }
+  }
+
+  function normalizeAngle(a){
+    while(a > Math.PI) a -= Math.PI * 2;
+    while(a < -Math.PI) a += Math.PI * 2;
+    return a;
+  }
+
+  function getEnemyRadius(e){
+    return Math.max(
+      10,
+      e && typeof e.radius === "number" ? e.radius : 14
+    );
+  }
+
+  function damageEnemyDirect(enemy, dealt){
+    if(!enemy || enemy.hp <= 0) return false;
+
+    enemy.hp -= dealt;
+    enemy.hitFlash = Math.max(enemy.hitFlash || 0, 6);
+
+    // 작은 움찔
+    const dx = enemy.x - player.x;
+    const dy = enemy.y - player.y;
+    const len = Math.hypot(dx, dy) || 1;
+    enemy.knockbackX = (enemy.knockbackX || 0) + (dx/len) * 1.6;
+    enemy.knockbackY = (enemy.knockbackY || 0) + (dy/len) * 1.6;
+
+    return enemy.hp <= 0;
+  }
+
+  function buildSkillCtx(skill, enemy, extraTags){
+    let ctx = buildCombatCtx(
+      skill.id === "heavyStrike" || skill.id === "doubleStrike" || skill.id === "infernalSmash"
+        ? "attack"
+        : skill.id,
+      enemy
+    );
+
+    ctx.tags = mergeTags(
+      (ctx && ctx.tags) ? ctx.tags : [],
+      skill.tags || [],
+      extraTags || []
+    );
+    return ctx;
+  }
+
+  /* -----------------------------
+     3) 공통 판정
+  ----------------------------- */
+  function applyConeDamage(skill, radius, angleDeg, baseDamage, extraTags){
+    const aim = getPlayerAimAngle();
+    const half = (angleDeg * Math.PI / 180) * 0.5;
+
+    for(const e of enemies){
+      if(!e || e.hp <= 0) continue;
+
+      const dx = e.x - player.x;
+      const dy = e.y - player.y;
+      const dist = Math.hypot(dx, dy);
+      if(dist > radius + getEnemyRadius(e)) continue;
+
+      const ang = Math.atan2(dy, dx);
+      const diff = Math.abs(normalizeAngle(ang - aim));
+      if(diff > half) continue;
+
+      const ctx = buildSkillCtx(skill, e, extraTags);
+      const result = computeFinalDamage(baseDamage, ctx);
+      damageEnemyDirect(e, result.dealt);
+    }
+  }
+
+  /* -----------------------------
+     4) 스킬 실행기
+  ----------------------------- */
+  function useHeavyStrike(skill){
+    let base = rollSkillBaseDamage(skill);
+    const p = randRangeLocal(
+      skill.extra.doubleDamageChanceMin,
+      skill.extra.doubleDamageChanceMax
+    );
+    if(Math.random() < p) base *= 2;
+
+    applyConeDamage(skill, skill.radius, skill.angleDeg, base);
+  }
+
+  function useDoubleStrike(skill){
+    const base = rollSkillBaseDamage(skill);
+
+    applyConeDamage(skill, skill.radius, skill.angleDeg, base);
+
+    setTimeout(()=>{
+      try{
+        applyConeDamage(skill, skill.radius, skill.angleDeg, base);
+      }catch(err){
+        console.warn("doubleStrike 2nd hit failed", err);
+      }
+    }, skill.repeatDelayMs || 100);
+  }
+
+  function useInfernalSmash(skill){
+    player.infernalCombo = (player.infernalCombo || 0) + 1;
+    if(player.infernalCombo > 3) player.infernalCombo = 1;
+
+    const stage = skill.comboStages[player.infernalCombo - 1];
+    const base = rollWeaponBaseDamage() * (stage.damageMul || 1);
+
+    // 물리 -> 화염 전환 packet
+    let pkt = makeDamagePacket(base, 0, 0, 0, 0);
+    const fc = Math.max(0, Math.min(1, stage.fireConvert || 0));
+    if(fc > 0){
+      pkt.fire += pkt.phys * fc;
+      pkt.phys *= (1 - fc);
+    }
+
+    const extraTags = stage.addAoe ? ["aoe"] : [];
+
+    applyConeDamage(
+      skill,
+      stage.radius,
+      stage.angleDeg,
+      pkt,
+      extraTags
+    );
+  }
+
+  function useActiveSkill(){
+    const activeId = player && player.skillLinks ? player.skillLinks.active : null;
+    const skill = activeId ? ACTIVE_SKILLS[activeId] : null;
+    if(!skill) return false;
+
+    if(skill.id === "heavyStrike"){
+      useHeavyStrike(skill);
+      return true;
+    }
+    if(skill.id === "doubleStrike"){
+      useDoubleStrike(skill);
+      return true;
+    }
+    if(skill.id === "infernalSmash"){
+      useInfernalSmash(skill);
+      return true;
+    }
+    return false;
+  }
+
+  window.useActiveSkill = useActiveSkill;
+
+  /* -----------------------------
+     5) 공격 버튼 훅
+     - 기존 코드를 지우지 않고,
+       클릭/터치 캡처 단계에서 먼저 스킬 실행
+  ----------------------------- */
+  (function bindAttackBtnStep1(){
+    const btn = document.getElementById("attackBtn");
+    if(!btn) return;
+
+    function runSkill(e){
+      try{
+        if(gamePaused) return;
+        if(overlayCount > 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        useActiveSkill();
+      }catch(err){
+        console.warn("attackBtn skill hook failed", err);
+      }
+    }
+
+    btn.addEventListener("click", runSkill, true);
+    btn.addEventListener("touchstart", runSkill, { capture:true, passive:false });
+    btn.addEventListener("pointerdown", runSkill, true);
+  })();
+
+})();
 </script>
 
 </body>
