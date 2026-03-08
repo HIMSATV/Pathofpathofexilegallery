@@ -427,7 +427,7 @@ body.gameover #hudBtns{ display:none !important; }
 #btnBag{
   position:fixed !important;
   left: max(12px, env(safe-area-inset-left, 0px) + 12px) !important;
-  bottom: calc(var(--safeBottom) + var(--pad) + 18px) !important;
+  bottom: calc(var(--safeBottom) + var(--pad) + 42px) !important;
   top:auto !important;
   z-index: 10001 !important;
   pointer-events:auto !important;
