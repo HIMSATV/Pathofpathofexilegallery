@@ -15512,27 +15512,32 @@ try{
      5) 스킬 실행기
   ----------------------------- */
   function useFireball(skill){
-    player.skillSwingStyle = "double";
-    player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.22) / 16));
-    player.skillSwingPower = 0.90;
 
-    const aim = const aim = getSpellAim(520);
-    const base = rollSpellBaseDamage(skill);
+  player.skillSwingStyle = "double";
+  player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.22) / 16));
+  player.skillSwingPower = 0.90;
 
-    spawnSkillProjectile({
-      kind: "fireball",
-      x: player.x + aim.x * 32,
-      y: player.y + aim.y * 32,
-      dx: aim.x,
-      dy: aim.y,
-      speed: skill.projectileSpeed || 7.8,
-      life: 90,
-      damage: base,
-      radius: 8,
-      explodeRadius: skill.explodeRadius || 72,
-      tags: skill.tags || []
-    });
-  }
+  const aim = getSpellAim(520);
+  const base = rollSpellBaseDamage(skill);
+
+  spawnSkillProjectile({
+    kind: "fireball",
+
+    x: player.x + aim.x * 32,
+    y: player.y + aim.y * 32,
+
+    dx: aim.x,
+    dy: aim.y,
+
+    speed: skill.projectileSpeed,
+    life: 90,
+    damage: base,
+    radius: 8,
+    explodeRadius: skill.explodeRadius,
+    tags: skill.tags || []
+  });
+
+}
 
   function useMoltenStrike(skill){
     player.skillSwingStyle = "infernal";
