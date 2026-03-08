@@ -15440,9 +15440,9 @@ function useLightningBeam(skill){
   const aim = getSpellAim(520);
   const base = rollSpellBaseDamage(skill);
 
-  const muzzle = 56;
+  const muzzle = 36;
   const sx = player.x + aim.x * muzzle;
-  const sy = player.y + aim.y * muzzle;
+  const sy = player.y + aim.y * muzzle + 16;
 
   for(const e of enemies){
     if(!e || e.hp <= 0) continue;
