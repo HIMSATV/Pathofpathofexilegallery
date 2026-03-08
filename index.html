@@ -15570,60 +15570,61 @@ ctx.lineTo(camX + p2.x - pp.x, camY + p2.y - pp.y + 20);
 
 }
 
-  function useMoltenStrike(skill){
-    player.skillSwingStyle = "infernal";
-    player.skillSwingTimer = Math.max(6, Math.round(getSkillUseTimeMs(skill, 0.26) / 16));
-    player.skillSwingPower = 1.05;
+ function useMoltenStrike(skill){
+  player.skillSwingStyle = "infernal";
+  player.skillSwingTimer = Math.max(6, Math.round(getSkillUseTimeMs(skill, 0.26) / 16));
+  player.skillSwingPower = 1.05;
 
-    // 본타
-    const base = rollSkillBaseDamage(skill);
-    if(typeof applyConeDamage === "function"){
-      applyConeDamage(skill, skill.radius, skill.angleDeg, base);
-    }
-
-    // 투사체 5발
-    const aim = getAimUnit();
-    const spread = skill.projectileSpreadDeg || 70;
-    const count = skill.projectileCount || 5;
-    const start = -spread * 0.5;
-    const step = (count <= 1) ? 0 : (spread / (count - 1));
-
-    for(let i=0;i<count;i++){
-      const deg = start + step * i;
-      const a = aim.angle + (deg * Math.PI / 180);
-      const dx = Math.cos(a);
-      const dy = Math.sin(a);
-
-      spawnSkillProjectile({
-        kind: "moltenShard",
-        x: player.x + dx * 32,
-        y: player.y + dy * 32,
-        dx, dy,
-        speed: 7.2,
-        life: 55,
-        damage: rollWeaponBaseDamage() * (skill.projectileDamageMul || 0.46),
-        radius: 7,
-        explodeRadius: skill.projectileExplodeRadius || 32,
-        tags: ["projectile","fire","aoe"]
-      });
-    }
-    }
-      function useIceNova(skill){
-    player.skillSwingStyle = "infernal";
-    player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.20) / 16));
-    player.skillSwingPower = 0.95;
-
-    const base = rollSpellBaseDamage(skill);
-
-    applyCircleSkillDamage(
-      player.x,
-      player.y,
-      skill.radius || 110,
-      base,
-      skill,
-      ["aoe","cold","nova"]
-    );
+  // 본타
+  const base = rollSkillBaseDamage(skill);
+  if(typeof applyConeDamage === "function"){
+    applyConeDamage(skill, skill.radius, skill.angleDeg, base);
   }
+
+  // 투사체 5발
+  const aim = getAimUnit();
+  const spread = skill.projectileSpreadDeg || 70;
+  const count = skill.projectileCount || 5;
+  const start = -spread * 0.5;
+  const step = (count <= 1) ? 0 : (spread / (count - 1));
+
+  for(let i=0; i<count; i++){
+    const deg = start + step * i;
+    const a = aim.angle + (deg * Math.PI / 180);
+    const dx = Math.cos(a);
+    const dy = Math.sin(a);
+
+    spawnSkillProjectile({
+      kind: "moltenShard",
+      x: player.x + dx * 32,
+      y: player.y + dy * 32,
+      dx, dy,
+      speed: 7.2,
+      life: 55,
+      damage: rollWeaponBaseDamage() * (skill.projectileDamageMul || 0.46),
+      radius: 7,
+      explodeRadius: skill.projectileExplodeRadius || 32,
+      tags: ["projectile","fire","aoe"]
+    });
+  }
+}
+
+function useIceNova(skill){
+  player.skillSwingStyle = "infernal";
+  player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.20) / 16));
+  player.skillSwingPower = 0.95;
+
+  const base = rollSpellBaseDamage(skill);
+
+  applyCircleSkillDamage(
+    player.x,
+    player.y,
+    skill.radius || 110,
+    base,
+    skill,
+    ["aoe","cold","nova"]
+  );
+}
     function useFirestorm(skill){
     player.skillSwingStyle = "infernal";
     player.skillSwingTimer = Math.max(6, Math.round(getSkillUseTimeMs(skill, 0.26) / 16));
