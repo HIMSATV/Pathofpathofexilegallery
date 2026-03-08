@@ -14752,7 +14752,7 @@ try{
 
     AFFIX_DB.prefix = ensureArr(AFFIX_DB.prefix);
     AFFIX_DB.suffix = ensureArr(AFFIX_DB.suffix);
-    const seen = new Set([...AFFIX_DB.prefix, ...AFFIX_DB.suffix].map(a => String(a && a.id || '')));
+    const seen = new Set(AFFIX_DB.prefix.concat(AFFIX_DB.suffix).map(a => String(a && a.id || '')));
     for(const a of extraPrefixes){ if(!seen.has(a.id)) { AFFIX_DB.prefix.push(a); seen.add(a.id); } }
     for(const a of extraSuffixes){ if(!seen.has(a.id)) { AFFIX_DB.suffix.push(a); seen.add(a.id); } }
     window.__POE_ELEM_AFFIX_PATCH__ = true;
