@@ -15440,7 +15440,18 @@ try{
       ctx.restore();
     }
   }
+if(window.__novaFx){
+  const fx = window.__novaFx;
 
+  ctx.strokeStyle = "#9be7ff";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(camX + fx.x, camY + fx.y, fx.radius, 0, Math.PI*2);
+  ctx.stroke();
+
+  fx.life--;
+  if(fx.life <= 0) window.__novaFx = null;
+}
   /* -----------------------------
      4) 번개 빔
   ----------------------------- */
@@ -15593,23 +15604,30 @@ ctx.lineTo(camX + p2.x - pp.x, camY + p2.y - pp.y + 20);
         tags: ["projectile","fire","aoe"]
       });
     }
-      function useIceNova(skill){
-    player.skillSwingStyle = "infernal";
-    player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.20) / 16));
-    player.skillSwingPower = 0.95;
+function useIceNova(skill){
+  player.skillSwingStyle = "infernal";
+  player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.20) / 16));
+  player.skillSwingPower = 0.95;
 
-    const base = rollSpellBaseDamage(skill);
+  const base = rollSpellBaseDamage(skill);
 
-    applyCircleSkillDamage(
-      player.x,
-      player.y,
-      skill.radius || 110,
-      base,
-      skill,
-      ["aoe","cold","nova"]
-    );
-  }
-  }
+  applyCircleSkillDamage(
+    player.x,
+    player.y,
+    skill.radius || 110,
+    base,
+    skill,
+    ["aoe","cold","nova"]
+  );
+
+  // 노바 이펙트
+  window.__novaFx = {
+    x: player.x,
+    y: player.y,
+    radius: skill.radius || 110,
+    life: 12
+  };
+}
 
   /* -----------------------------
      6) 기존 useActiveSkill 확장
