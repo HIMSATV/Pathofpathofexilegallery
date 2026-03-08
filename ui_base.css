@@ -149,7 +149,7 @@ body{
 /* Mini bag button (if exists) */
 #miniBagBtn{
   position:fixed;
-  top:calc(var(--safeTop) + 10px);
+  top:calc(var(--safeTop) + 60px);
   left:10px;
   z-index:9998;
   border:0;
