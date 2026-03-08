@@ -14774,7 +14774,7 @@ try{
   ----------------------------- */
   try{
     player.skillLinks = player.skillLinks || {
-      active: "doubleStrike",
+      active: "fireball",
       supports: [null, null, null, null, null]
     };
     player.infernalCombo = player.infernalCombo || 0;
@@ -15077,7 +15077,442 @@ try{
     btn.addEventListener("touchstart", runSkill, { passive:true });
     btn.addEventListener("mousedown", runSkill, false);
   })();
+/* =========================================================
+   STEP 2 SKILL PATCH
+   - 화염구 / 번개 / 용암 타격
+   - STEP 1 뒤에 그대로 추가
+   ========================================================= */
+(function(){
+  if(window.__SKILL_STEP2_PATCH__) return;
+  window.__SKILL_STEP2_PATCH__ = true;
 
+  /* -----------------------------
+     1) 액티브 스킬 추가
+  ----------------------------- */
+  window.ACTIVE_SKILLS = window.ACTIVE_SKILLS || {};
+  Object.assign(window.ACTIVE_SKILLS, {
+    moltenStrike: {
+      id: "moltenStrike",
+      name: "용암 타격",
+      source: "weapon",
+      shape: "molten_strike",
+      tags: ["attack","melee","projectile","fire"],
+      radius: 78,
+      angleDeg: 68,
+      baseMul: 0.92,
+      useTimeRatio: 1.00,
+      projectileCount: 5,
+      projectileSpreadDeg: 70,
+      projectileDamageMul: 0.46,
+      projectileExplodeRadius: 32
+    },
+
+    fireball: {
+      id: "fireball",
+      name: "화염구",
+      source: "spell",
+      shape: "fireball",
+      tags: ["spell","projectile","fire","aoe"],
+      flatMin: 18,
+      flatMax: 28,
+      baseMul: 1.00,
+      useTimeRatio: 1.05,
+      projectileSpeed: 7.8,
+      explodeRadius: 72
+    },
+
+    lightningBeam: {
+      id: "lightningBeam",
+      name: "번개",
+      source: "spell",
+      shape: "beam",
+      tags: ["spell","lightning","beam","pierce"],
+      flatMin: 22,
+      flatMax: 34,
+      baseMul: 1.00,
+      useTimeRatio: 0.95,
+      beamLength: 280,
+      beamWidth: 34
+    }
+  });
+
+  /* -----------------------------
+     2) 공용 유틸
+  ----------------------------- */
+  function getAimUnit(){
+    const a = (typeof getPlayerAimAngle === "function") ? getPlayerAimAngle() : 0;
+    return { x: Math.cos(a), y: Math.sin(a), angle:a };
+  }
+
+  function rollSpellBaseDamage(skill){
+    return randRange(
+      skill.flatMin || 0,
+      skill.flatMax || 0
+    ) * (skill.baseMul || 1);
+  }
+
+  function spawnSkillProjectile(opt){
+    window.skillProjectiles = window.skillProjectiles || [];
+    skillProjectiles.push({
+      kind: opt.kind || "projectile",
+      x: opt.x, y: opt.y,
+      dx: opt.dx, dy: opt.dy,
+      angle: Math.atan2(opt.dy, opt.dx),
+      speed: opt.speed || 7,
+      life: opt.life || 90,
+      damage: opt.damage || 1,
+      radius: opt.radius || 8,
+      explodeRadius: opt.explodeRadius || 0,
+      tags: Array.isArray(opt.tags) ? opt.tags.slice() : []
+    });
+  }
+
+  function applyCircleSkillDamage(cx, cy, radius, damage, skill, extraTags){
+    for(const e of enemies){
+      if(!e || e.hp <= 0) continue;
+
+      const dx = e.x - cx;
+      const dy = e.y - cy;
+      const dist = Math.hypot(dx, dy);
+      const er = (typeof getEnemyRadius === "function") ? getEnemyRadius(e) : (e.radius || 14);
+      if(dist > radius + er) continue;
+
+      const ctx = buildCombatCtx(skill.id, e);
+      ctx.tags = mergeTags(ctx.tags || [], skill.tags || [], extraTags || []);
+
+      const result = computeFinalDamage(damage, ctx);
+      if(typeof damageEnemyDirect === "function"){
+        damageEnemyDirect(e, result.dealt);
+      }else{
+        e.hp -= result.dealt;
+      }
+    }
+  }
+
+  function explodeSkillProjectile(p){
+    if(!p || !p.explodeRadius) return;
+    const fakeSkill = {
+      id: p.kind || "projectile",
+      tags: p.tags || []
+    };
+    applyCircleSkillDamage(
+      p.x, p.y,
+      p.explodeRadius,
+      p.damage,
+      fakeSkill,
+      ["aoe"]
+    );
+  }
+
+  /* -----------------------------
+     3) 투사체 업데이트/그리기
+  ----------------------------- */
+  function updateSkillProjectiles(){
+    if(!window.skillProjectiles || !skillProjectiles.length) return;
+
+    for(let i = skillProjectiles.length - 1; i >= 0; i--){
+      const p = skillProjectiles[i];
+      p.x += p.dx * (p.speed || 1);
+      p.y += p.dy * (p.speed || 1);
+      p.life--;
+
+      let hit = false;
+
+      // 벽 충돌
+      const tx = Math.floor(p.x / tileSize);
+      const ty = Math.floor(p.y / tileSize);
+      if(!map[ty] || map[ty][tx] === 1){
+        if(p.kind === "fireball" || p.kind === "moltenShard"){
+          explodeSkillProjectile(p);
+        }
+        skillProjectiles.splice(i,1);
+        continue;
+      }
+
+      // 적 충돌
+      for(const e of enemies){
+        if(!e || e.hp <= 0) continue;
+
+        const dx = e.x - p.x;
+        const dy = e.y - p.y;
+        const er = (typeof getEnemyRadius === "function") ? getEnemyRadius(e) : (e.radius || 14);
+        if(Math.hypot(dx,dy) > (p.radius || 8) + er) continue;
+
+        if(p.kind === "fireball" || p.kind === "moltenShard"){
+          explodeSkillProjectile(p);
+        }else{
+          const fakeSkill = { id: p.kind || "projectile", tags: p.tags || [] };
+          const ctx = buildCombatCtx(fakeSkill.id, e);
+          ctx.tags = mergeTags(ctx.tags || [], fakeSkill.tags || []);
+          const result = computeFinalDamage(p.damage, ctx);
+          if(typeof damageEnemyDirect === "function"){
+            damageEnemyDirect(e, result.dealt);
+          }else{
+            e.hp -= result.dealt;
+          }
+        }
+
+        hit = true;
+        break;
+      }
+
+      if(hit){
+        skillProjectiles.splice(i,1);
+        continue;
+      }
+
+      if(p.life <= 0){
+        skillProjectiles.splice(i,1);
+      }
+    }
+  }
+
+  function drawSkillProjectiles(){
+    if(!window.skillProjectiles || !skillProjectiles.length) return;
+
+    for(const p of skillProjectiles){
+      const sp = isoProject(p.x, p.y);
+      const pp = isoProject(player.x, player.y);
+      const camX = canvas.width * 0.5;
+      const camY = canvas.height * 0.5 - (ISO.camYOffset || 0);
+      const px = camX + sp.x - pp.x;
+      const py = camY + sp.y - pp.y - 6;
+
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(p.angle || 0);
+
+      if(p.kind === "fireball"){
+        ctx.fillStyle = "#ff8a2b";
+        ctx.beginPath();
+        ctx.arc(0,0,7,0,Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,200,120,0.65)";
+        ctx.beginPath();
+        ctx.arc(-4,-2,3,0,Math.PI*2);
+        ctx.fill();
+      }else if(p.kind === "moltenShard"){
+        ctx.fillStyle = "#ff6a00";
+        ctx.beginPath();
+        ctx.moveTo(8,0);
+        ctx.lineTo(-6,4);
+        ctx.lineTo(-3,0);
+        ctx.lineTo(-6,-4);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+  }
+
+  /* -----------------------------
+     4) 번개 빔
+  ----------------------------- */
+  function useLightningBeam(skill){
+    player.skillSwingStyle = "infernal";
+    player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.24) / 16));
+    player.skillSwingPower = 1.08;
+
+    const aim = getAimUnit();
+    const base = rollSpellBaseDamage(skill);
+
+    for(const e of enemies){
+      if(!e || e.hp <= 0) continue;
+
+      const ex = e.x - player.x;
+      const ey = e.y - player.y;
+
+      const forward = ex * aim.x + ey * aim.y;
+      if(forward < 0 || forward > skill.beamLength) continue;
+
+      const side = Math.abs(ex * (-aim.y) + ey * aim.x);
+      const er = (typeof getEnemyRadius === "function") ? getEnemyRadius(e) : (e.radius || 14);
+      if(side > (skill.beamWidth * 0.5) + er) continue;
+
+      const ctx = buildCombatCtx(skill.id, e);
+      ctx.tags = mergeTags(ctx.tags || [], skill.tags || []);
+      const result = computeFinalDamage(base, ctx);
+
+      if(typeof damageEnemyDirect === "function"){
+        damageEnemyDirect(e, result.dealt);
+      }else{
+        e.hp -= result.dealt;
+      }
+    }
+
+    // 간단 시각효과
+    window.__lastLightningBeam = {
+      x1: player.x,
+      y1: player.y,
+      x2: player.x + aim.x * skill.beamLength,
+      y2: player.y + aim.y * skill.beamLength,
+      life: 6
+    };
+  }
+
+  function updateLightningBeamFx(){
+    if(window.__lastLightningBeam && __lastLightningBeam.life > 0){
+      __lastLightningBeam.life--;
+    }
+  }
+
+  function drawLightningBeamFx(){
+    if(!window.__lastLightningBeam || __lastLightningBeam.life <= 0) return;
+
+    const a = __lastLightningBeam;
+    const p1 = isoProject(a.x1, a.y1);
+    const p2 = isoProject(a.x2, a.y2);
+    const pp = isoProject(player.x, player.y);
+    const camX = canvas.width * 0.5;
+    const camY = canvas.height * 0.5 - (ISO.camYOffset || 0);
+
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, a.life / 6);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#9ecbff";
+    ctx.beginPath();
+    ctx.moveTo(camX + p1.x - pp.x, camY + p1.y - pp.y - 10);
+    ctx.lineTo(camX + p2.x - pp.x, camY + p2.y - pp.y - 10);
+    ctx.stroke();
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(camX + p1.x - pp.x, camY + p1.y - pp.y - 10);
+    ctx.lineTo(camX + p2.x - pp.x, camY + p2.y - pp.y - 10);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* -----------------------------
+     5) 스킬 실행기
+  ----------------------------- */
+  function useFireball(skill){
+    player.skillSwingStyle = "double";
+    player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.22) / 16));
+    player.skillSwingPower = 0.90;
+
+    const aim = getAimUnit();
+    const base = rollSpellBaseDamage(skill);
+
+    spawnSkillProjectile({
+      kind: "fireball",
+      x: player.x + aim.x * 20,
+      y: player.y + aim.y * 20,
+      dx: aim.x,
+      dy: aim.y,
+      speed: skill.projectileSpeed || 7.8,
+      life: 90,
+      damage: base,
+      radius: 8,
+      explodeRadius: skill.explodeRadius || 72,
+      tags: skill.tags || []
+    });
+  }
+
+  function useMoltenStrike(skill){
+    player.skillSwingStyle = "infernal";
+    player.skillSwingTimer = Math.max(6, Math.round(getSkillUseTimeMs(skill, 0.26) / 16));
+    player.skillSwingPower = 1.05;
+
+    // 본타
+    const base = rollSkillBaseDamage(skill);
+    if(typeof applyConeDamage === "function"){
+      applyConeDamage(skill, skill.radius, skill.angleDeg, base);
+    }
+
+    // 투사체 5발
+    const aim = getAimUnit();
+    const spread = skill.projectileSpreadDeg || 70;
+    const count = skill.projectileCount || 5;
+    const start = -spread * 0.5;
+    const step = (count <= 1) ? 0 : (spread / (count - 1));
+
+    for(let i=0;i<count;i++){
+      const deg = start + step * i;
+      const a = aim.angle + (deg * Math.PI / 180);
+      const dx = Math.cos(a);
+      const dy = Math.sin(a);
+
+      spawnSkillProjectile({
+        kind: "moltenShard",
+        x: player.x + dx * 18,
+        y: player.y + dy * 18,
+        dx, dy,
+        speed: 7.2,
+        life: 55,
+        damage: rollWeaponBaseDamage() * (skill.projectileDamageMul || 0.46),
+        radius: 7,
+        explodeRadius: skill.projectileExplodeRadius || 32,
+        tags: ["projectile","fire","aoe"]
+      });
+    }
+  }
+
+  /* -----------------------------
+     6) 기존 useActiveSkill 확장
+  ----------------------------- */
+  const __oldUseActiveSkillStep2 = window.useActiveSkill;
+  window.useActiveSkill = function(){
+    const activeId = player && player.skillLinks ? player.skillLinks.active : null;
+    const skill = activeId ? ACTIVE_SKILLS[activeId] : null;
+    if(!skill) return false;
+
+    if(skill.id === "fireball"){
+      useFireball(skill);
+      return true;
+    }
+    if(skill.id === "lightningBeam"){
+      useLightningBeam(skill);
+      return true;
+    }
+    if(skill.id === "moltenStrike"){
+      useMoltenStrike(skill);
+      return true;
+    }
+
+    if(typeof __oldUseActiveSkillStep2 === "function"){
+      return __oldUseActiveSkillStep2();
+    }
+    return false;
+  };
+
+  /* -----------------------------
+     7) update / draw 후킹
+  ----------------------------- */
+  if(typeof update === "function" && !window.__STEP2_UPDATE_WRAP__){
+    const __oldUpdateStep2 = update;
+    update = function(){
+      const out = __oldUpdateStep2.apply(this, arguments);
+      try{
+        updateSkillProjectiles();
+        updateLightningBeamFx();
+      }catch(err){
+        console.warn("step2 update failed", err);
+      }
+      return out;
+    };
+    window.__STEP2_UPDATE_WRAP__ = true;
+  }
+
+  if(typeof drawIso === "function" && !window.__STEP2_DRAW_WRAP__){
+    const __oldDrawIsoStep2 = drawIso;
+    drawIso = function(){
+      const out = __oldDrawIsoStep2.apply(this, arguments);
+      try{
+        drawSkillProjectiles();
+        drawLightningBeamFx();
+      }catch(err){
+        console.warn("step2 draw failed", err);
+      }
+      return out;
+    };
+    if(typeof draw === "function") draw = drawIso;
+    window.__STEP2_DRAW_WRAP__ = true;
+  }
+
+})();
 })();
 </script>
 
