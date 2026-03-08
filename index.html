@@ -15210,56 +15210,114 @@ try{
   /* -----------------------------
      3) 투사체 업데이트/그리기
   ----------------------------- */
+    function distancePointToSegment(px, py, x1, y1, x2, y2){
+    const vx = x2 - x1;
+    const vy = y2 - y1;
+    const wx = px - x1;
+    const wy = py - y1;
+
+    const c1 = vx * wx + vy * wy;
+    if(c1 <= 0) return Math.hypot(px - x1, py - y1);
+
+    const c2 = vx * vx + vy * vy;
+    if(c2 <= c1) return Math.hypot(px - x2, py - y2);
+
+    const b = c1 / c2;
+    const bx = x1 + b * vx;
+    const by = y1 + b * vy;
+    return Math.hypot(px - bx, py - by);
+  }
+
+  function isWallAtWorld(x, y){
+    const tx = Math.floor(x / tileSize);
+    const ty = Math.floor(y / tileSize);
+    if(!map[ty]) return true;
+    return map[ty][tx] === 1;
+  }
+
+  function projectileTouchesWall(prevX, prevY, nextX, nextY, radius){
+    const steps = Math.max(2, Math.ceil(Math.hypot(nextX - prevX, nextY - prevY) / 6));
+    for(let i = 0; i <= steps; i++){
+      const t = i / steps;
+      const sx = prevX + (nextX - prevX) * t;
+      const sy = prevY + (nextY - prevY) * t;
+
+      if(isWallAtWorld(sx, sy)) return { hit:true, x:sx, y:sy };
+
+      // 반지름 보정
+      if(isWallAtWorld(sx + radius, sy)) return { hit:true, x:sx + radius, y:sy };
+      if(isWallAtWorld(sx - radius, sy)) return { hit:true, x:sx - radius, y:sy };
+      if(isWallAtWorld(sx, sy + radius)) return { hit:true, x:sx, y:sy + radius };
+      if(isWallAtWorld(sx, sy - radius)) return { hit:true, x:sx, y:sy - radius };
+    }
+    return { hit:false, x:nextX, y:nextY };
+  }
+
   function updateSkillProjectiles(){
     if(!window.skillProjectiles || !skillProjectiles.length) return;
 
     for(let i = skillProjectiles.length - 1; i >= 0; i--){
       const p = skillProjectiles[i];
-      p.x += p.dx * (p.speed || 1);
-      p.y += p.dy * (p.speed || 1);
+
+      const prevX = p.x;
+      const prevY = p.y;
+      const nextX = p.x + p.dx * (p.speed || 1);
+      const nextY = p.y + p.dy * (p.speed || 1);
+
       p.life--;
 
-      let hit = false;
+      // 1) 벽 충돌: 경로 전체 검사
+      const wallHit = projectileTouchesWall(prevX, prevY, nextX, nextY, p.radius || 8);
+      if(wallHit.hit){
+        p.x = wallHit.x;
+        p.y = wallHit.y;
 
-      // 벽 충돌
-      const tx = Math.floor(p.x / tileSize);
-      const ty = Math.floor(p.y / tileSize);
-      if(!map[ty] || map[ty][tx] === 1){
         if(p.kind === "fireball" || p.kind === "moltenShard"){
           explodeSkillProjectile(p);
         }
+
         skillProjectiles.splice(i,1);
         continue;
       }
 
-      // 적 충돌
+      // 우선 이동 반영
+      p.x = nextX;
+      p.y = nextY;
+
+      // 2) 적 충돌: 점이 아니라 "이동 경로 선분"으로 검사
+      let hitEnemy = null;
+
       for(const e of enemies){
         if(!e || e.hp <= 0) continue;
 
-        const dx = e.x - p.x;
-        const dy = e.y - p.y;
         const er = (typeof getEnemyRadius === "function") ? getEnemyRadius(e) : (e.radius || 14);
-        if(Math.hypot(dx,dy) > (p.radius || 8) + er) continue;
+        const hitDist = distancePointToSegment(e.x, e.y, prevX, prevY, nextX, nextY);
 
+        if(hitDist <= (p.radius || 8) + er){
+          hitEnemy = e;
+          break;
+        }
+      }
+
+      if(hitEnemy){
         if(p.kind === "fireball" || p.kind === "moltenShard"){
+          // 적 위치에서 터지게
+          p.x = hitEnemy.x;
+          p.y = hitEnemy.y;
           explodeSkillProjectile(p);
         }else{
           const fakeSkill = { id: p.kind || "projectile", tags: p.tags || [] };
-          const ctx = buildCombatCtx(fakeSkill.id, e);
+          const ctx = buildCombatCtx(fakeSkill.id, hitEnemy);
           ctx.tags = mergeTags(ctx.tags || [], fakeSkill.tags || []);
           const result = computeFinalDamage(p.damage, ctx);
+
           if(typeof damageEnemyDirect === "function"){
-            damageEnemyDirect(e, result.dealt);
+            damageEnemyDirect(hitEnemy, result.dealt);
           }else{
-            e.hp -= result.dealt;
+            hitEnemy.hp -= result.dealt;
           }
         }
 
-        hit = true;
-        break;
-      }
-
-      if(hit){
         skillProjectiles.splice(i,1);
         continue;
       }
