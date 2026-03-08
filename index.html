@@ -15198,6 +15198,18 @@ try{
       useTimeRatio: 1.00,
       beamLength: 280,
       beamWidth: 34
+    },
+        iceNova: {
+      id: "iceNova",
+      name: "얼음 폭발",
+      source: "spell",
+      shape: "nova",
+      tags: ["spell","cold","aoe","nova"],
+      flatMin: 26,
+      flatMax: 40,
+      baseMul: 1.00,
+      useTimeRatio: 0.95,
+      radius: 110
     }
   });
 
@@ -15581,6 +15593,22 @@ ctx.lineTo(camX + p2.x - pp.x, camY + p2.y - pp.y + 20);
         tags: ["projectile","fire","aoe"]
       });
     }
+      function useIceNova(skill){
+    player.skillSwingStyle = "infernal";
+    player.skillSwingTimer = Math.max(5, Math.round(getSkillUseTimeMs(skill, 0.20) / 16));
+    player.skillSwingPower = 0.95;
+
+    const base = rollSpellBaseDamage(skill);
+
+    applyCircleSkillDamage(
+      player.x,
+      player.y,
+      skill.radius || 110,
+      base,
+      skill,
+      ["aoe","cold","nova"]
+    );
+  }
   }
 
   /* -----------------------------
@@ -15602,6 +15630,10 @@ ctx.lineTo(camX + p2.x - pp.x, camY + p2.y - pp.y + 20);
     }
     if(skill.id === "moltenStrike"){
       useMoltenStrike(skill);
+      return true;
+    }
+        if(skill.id === "iceNova"){
+      useIceNova(skill);
       return true;
     }
 
