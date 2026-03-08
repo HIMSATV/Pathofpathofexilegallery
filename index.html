@@ -14774,7 +14774,7 @@ try{
   ----------------------------- */
   try{
     player.skillLinks = player.skillLinks || {
-      active: "iceNova",
+      active: "firestorm",
       supports: [null, null, null, null, null]
     };
     player.infernalCombo = player.infernalCombo || 0;
@@ -15210,6 +15210,20 @@ try{
       baseMul: 1.00,
       useTimeRatio: 0.95,
       radius: 110
+    },
+        firestorm: {
+      id: "firestorm",
+      name: "화염 폭풍",
+      source: "spell",
+      shape: "storm",
+      tags: ["spell","fire","aoe"],
+      flatMin: 20,
+      flatMax: 32,
+      baseMul: 1.00,
+      useTimeRatio: 1.08,
+      radius: 120,
+      impacts: 6,
+      duration: 30
     }
   });
 
@@ -15609,6 +15623,34 @@ ctx.lineTo(camX + p2.x - pp.x, camY + p2.y - pp.y + 20);
       ["aoe","cold","nova"]
     );
   }
+   function useFirestorm(skill){
+    player.skillSwingStyle = "infernal";
+    player.skillSwingTimer = Math.max(6, Math.round(getSkillUseTimeMs(skill, 0.26) / 16));
+    player.skillSwingPower = 1.00;
+
+    const base = rollSpellBaseDamage(skill);
+    const aim = getSpellAim(520);
+    const cx = player.x + aim.x * 120;
+    const cy = player.y + aim.y * 120;
+
+    const impacts = skill.impacts || 6;
+    const radius = skill.radius || 120;
+
+    for(let i=0; i<impacts; i++){
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.random() * radius;
+      const ix = cx + Math.cos(a) * r;
+      const iy = cy + Math.sin(a) * r;
+
+      applyCircleSkillDamage(
+        ix,
+        iy,
+        42,
+        base,
+        skill,
+        ["aoe","fire"]
+      );
+    }
   }
 
   /* -----------------------------
@@ -15634,6 +15676,10 @@ ctx.lineTo(camX + p2.x - pp.x, camY + p2.y - pp.y + 20);
     }
         if(skill.id === "iceNova"){
       useIceNova(skill);
+      return true;
+    }
+        if(skill.id === "firestorm"){
+      useFirestorm(skill);
       return true;
     }
 
