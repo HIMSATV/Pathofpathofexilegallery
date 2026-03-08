@@ -15439,13 +15439,14 @@ try{
 
     const aim = getSpellAim(520);
     const base = rollSpellBaseDamage(skill);
-
+    const muzzle = 32;
+    const sx = player.x + aim.x * muzzle;
+    const sy = player.y + aim.y * muzzle;
     for(const e of enemies){
       if(!e || e.hp <= 0) continue;
 
-      const ex = e.x - player.x;
-      const ey = e.y - player.y;
-
+            const ex = e.x - sx;
+      const ey = e.y - sy;
       const forward = ex * aim.x + ey * aim.y;
       if(forward < 0 || forward > skill.beamLength) continue;
 
