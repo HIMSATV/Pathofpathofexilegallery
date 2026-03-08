@@ -14954,30 +14954,38 @@ try{
   window.useActiveSkill = useActiveSkill;
 
   /* -----------------------------
-     5) 공격 버튼 훅
-     - 기존 코드를 지우지 않고,
-       클릭/터치 캡처 단계에서 먼저 스킬 실행
+     5) 공격 버튼 훅 (수정판)
+     - 기존 입력을 막지 않음
+     - 버튼이 실제로 눌릴 수 있게 함
   ----------------------------- */
   (function bindAttackBtnStep1(){
     const btn = document.getElementById("attackBtn");
     if(!btn) return;
 
-    function runSkill(e){
+    let __skillTapLock = false;
+
+    function runSkill(){
       try{
         if(gamePaused) return;
         if(overlayCount > 0) return;
-        e.preventDefault();
-        e.stopPropagation();
+        if(__skillTapLock) return;
 
+        __skillTapLock = true;
         useActiveSkill();
+
+        setTimeout(()=>{
+          __skillTapLock = false;
+        }, 120);
       }catch(err){
+        __skillTapLock = false;
         console.warn("attackBtn skill hook failed", err);
       }
     }
 
-    btn.addEventListener("click", runSkill, true);
-    btn.addEventListener("touchstart", runSkill, { capture:true, passive:false });
-    btn.addEventListener("pointerdown", runSkill, true);
+    // 기존 버튼 이벤트를 막지 않고 '추가로'만 실행
+    btn.addEventListener("pointerdown", runSkill, false);
+    btn.addEventListener("touchstart", runSkill, { passive:true });
+    btn.addEventListener("mousedown", runSkill, false);
   })();
 
 })();
