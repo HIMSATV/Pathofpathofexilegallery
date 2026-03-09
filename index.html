@@ -15950,10 +15950,8 @@ ctx.lineTo(camX + p2.x - pp.x, camY + p2.y - pp.y + 20);
   function drawWhirlwindFx(){
     const camX = canvas.width * 0.5;
     const camY = canvas.height * 0.5 - (ISO.camYOffset || 0);
-    const iso = isoProject(player.x, player.y);
-
-const floorX = camX + iso.x;
-const floorY = camY + iso.y + 18;
+    const floorX = camX;
+const floorY = camY + 30;
     const spinPhase = player.whirlwindSpinPhase || 0;
 
     if(player.whirlwindActive){
