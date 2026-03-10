@@ -6890,18 +6890,33 @@ function checkHit(){
 
     g.critChanceAdd = savedCritAdd;
 
-    if(!bossInvul && e.invul <= 0){
-      if((g.executeChance || 0) > 0 && e.hp > 0){
-        const hpRatio = e.hp / Math.max(1, e.maxHp || e.hp);
-        if(hpRatio <= 0.18 && Math.random() < (g.executeChance || 0)){
-          e.hp = 0;
-        }else{
-          e.hp -= dealt;
-        }
-      }else{
-        e.hp -= dealt;
-      }
+    const prevHp = e.hp;
+
+if(!bossInvul && e.invul <= 0){
+  if((g.executeChance || 0) > 0 && e.hp > 0){
+    const hpRatio = e.hp / Math.max(1, e.maxHp || e.hp);
+    if(hpRatio <= 0.18 && Math.random() < (g.executeChance || 0)){
+      e.hp = 0;
+    }else{
+      e.hp -= dealt;
     }
+  }else{
+    e.hp -= dealt;
+  }
+}
+
+const diedNow = (prevHp > 0 && e.hp <= 0);
+
+if(diedNow){
+  if(e.type === "boss"){
+    startBossDeath(e);
+  }else{
+    emitEvent("kill", { enemy:e, x:e.x, y:e.y, type:e.type });
+    spawnEnemyDeathBurst(e.x, e.y, e.type);
+    spawnLoot(e.x, e.y, "hit");
+    giveXP(e);
+  }
+}
 
     emitEvent("hit", { enemy: e, dealt });
 
