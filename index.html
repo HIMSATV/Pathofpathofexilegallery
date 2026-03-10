@@ -17070,7 +17070,10 @@ const floorY = camY + 70;
 
   btnSkills.addEventListener('click', function(e){ stopEvt(e); openSkillGemPanel(); });
   overlay.addEventListener('click', function(e){ if(e.target === overlay) closeSkillGemPanel(); });
-  overlay.querySelector('#btnSkillGemClose').addEventListener('click', closeSkillGemPanel);
+  overlay.querySelector('#btnSkillGemClose').addEventListener('click', function(e){
+  stopEvt(e);
+  closeSkillGemPanel(false);
+});
   overlay.querySelector('#btnSkillGemClear').addEventListener('click', function(){
     const links = ensureSkillLinks();
     links.supports = [null,null,null,null,null];
