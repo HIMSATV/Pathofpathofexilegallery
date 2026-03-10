@@ -14299,7 +14299,7 @@ window.addEventListener("load", function(){
       let out = oldPlayerTaken.call(this, incoming, ctx);
       ensureChargeState();
       const endurance = Math.max(0, num(player && player.chargeState && player.chargeState.endurance, 0));
-      if(endurance > 0) out *= Math.max(0.4, 1 - endurance * 0.03);
+      if(endurance > 0) out *= Math.max(0.4, 1 - endurance * 0.04);
       return out;
     };
   }
