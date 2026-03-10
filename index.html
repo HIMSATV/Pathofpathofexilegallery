@@ -18618,28 +18618,33 @@ const floorY = camY + 70;
         }
       }
 
-      const killed = __oldDamageEnemyDirect.call(this, enemy, finalDealt);
+     const wasHp = enemy.hp;
 
-      const heal =
-        finalDealt * __num(g.lifeLeech, 0)
-        + __num(g.hpOnHit, 0);
+const out = __oldDamageEnemyDirect.call(this, enemy, finalDealt);
 
-      if(heal > 0 && player){
-        player.hp = Math.min(player.maxHp || player.hp || 0, (player.hp || 0) + heal);
-      }
+const heal =
+  finalDealt * __num(g.lifeLeech, 0)
+  + __num(g.hpOnHit, 0);
 
-      if(killed){
-        try{
-          if(typeof spawnEnemyDeathBurst === 'function'){
-            spawnEnemyDeathBurst(enemy.x, enemy.y, enemy.type);
-          }
-        }catch(_){ }
-        try{
-          shake = Math.max(shake || 0, enemy && enemy.type === 'boss' ? 8 : 3);
-        }catch(_){ }
-      }
+if(heal > 0 && player){
+  player.hp = Math.min(player.maxHp || player.hp || 0, (player.hp || 0) + heal);
+}
 
-      return killed;
+// 반환값이 아니라 HP 변화로 판정
+const diedNow = (wasHp > 0 && enemy.hp <= 0);
+
+if(diedNow){
+  try{
+    if(typeof spawnEnemyDeathBurst === 'function'){
+      spawnEnemyDeathBurst(enemy.x, enemy.y, enemy.type);
+    }
+  }catch(_){ }
+  try{
+    shake = Math.max(shake || 0, enemy && enemy.type === 'boss' ? 8 : 3);
+  }catch(_){ }
+}
+
+return out;
     };
   }
 })();
