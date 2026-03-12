@@ -24131,9 +24131,34 @@ const floorY = camY + 70;
           ctx.globalAlpha = 0.78;
           ctx.strokeStyle = 'rgba(120,220,255,0.92)';
           ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.arc(x, y - r * 0.9, ring, 0, Math.PI * 2);
-          ctx.stroke();
+          const cx = x;
+const cy = y - r * 0.9;
+const pr = ring;
+
+ctx.beginPath();
+
+for(let i=0;i<5;i++){
+  const a = -Math.PI/2 + i * Math.PI * 2 / 5;
+  const px = cx + Math.cos(a) * pr;
+  const py = cy + Math.sin(a) * pr;
+
+  if(i===0) ctx.moveTo(px,py);
+  else ctx.lineTo(px,py);
+}
+
+ctx.closePath();
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(cx + Math.cos(-Math.PI/2)*pr, cy + Math.sin(-Math.PI/2)*pr);
+
+for(let i=2;i<=10;i+=2){
+  const a = -Math.PI/2 + i * Math.PI * 2 / 5;
+  ctx.lineTo(cx + Math.cos(a)*pr, cy + Math.sin(a)*pr);
+}
+
+ctx.closePath();
+ctx.stroke();
           // removed the two blue inner orbs inside the body ring per user request
           ctx.restore();
         }catch(err){
