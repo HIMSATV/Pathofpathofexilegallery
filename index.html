@@ -17733,9 +17733,9 @@ function useLightningBeam(skill){
       const p1 = isoProject(fx.x1, fx.y1);
       const p2 = isoProject(fx.x2, fx.y2);
       const sx = camX + p1.x - pp.x;
-      const sy = camY + p1.y - pp.y + 34;
+      const sy = camY + p1.y - pp.y + 40;
       const ex = camX + p2.x - pp.x;
-      const ey = camY + p2.y - pp.y + 34;
+      const ey = camY + p2.y - pp.y + 40;
       const lifeT = Math.max(0, fx.life / Math.max(1, fx.maxLife));
       const burstT = Math.max(0, (fx.burstLife || 0) / Math.max(1, fx.burstMaxLife || 1));
       const dx = ex - sx;
