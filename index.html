@@ -24131,34 +24131,64 @@ const floorY = camY + 70;
           ctx.globalAlpha = 0.78;
           ctx.strokeStyle = 'rgba(120,220,255,0.92)';
           ctx.lineWidth = 3;
-          const cx = x;
+const cx = x;
 const cy = y - r * 0.9;
 const pr = ring;
 
-ctx.beginPath();
+// 회전 속도
+const rot = performance.now() * 0.0025;
 
+ctx.save();
+ctx.translate(cx, cy);
+ctx.rotate(rot);
+
+ctx.strokeStyle = "rgba(120,210,255,0.9)";
+ctx.lineWidth = 2;
+
+// 바깥 원
+ctx.beginPath();
+ctx.arc(0, 0, pr * 1.08, 0, Math.PI * 2);
+ctx.stroke();
+
+// 룬 느낌 점선 원
+ctx.save();
+ctx.setLineDash([3,4]);
+ctx.beginPath();
+ctx.arc(0, 0, pr * 0.82, 0, Math.PI * 2);
+ctx.stroke();
+ctx.restore();
+
+// 오각형
+ctx.beginPath();
 for(let i=0;i<5;i++){
   const a = -Math.PI/2 + i * Math.PI * 2 / 5;
-  const px = cx + Math.cos(a) * pr;
-  const py = cy + Math.sin(a) * pr;
-
+  const px = Math.cos(a) * pr;
+  const py = Math.sin(a) * pr;
   if(i===0) ctx.moveTo(px,py);
   else ctx.lineTo(px,py);
 }
-
 ctx.closePath();
 ctx.stroke();
 
+// 판타그램
 ctx.beginPath();
-ctx.moveTo(cx + Math.cos(-Math.PI/2)*pr, cy + Math.sin(-Math.PI/2)*pr);
-
-for(let i=2;i<=10;i+=2){
-  const a = -Math.PI/2 + i * Math.PI * 2 / 5;
-  ctx.lineTo(cx + Math.cos(a)*pr, cy + Math.sin(a)*pr);
+for(let i=0;i<5;i++){
+  const idx = (i * 2) % 5;
+  const a = -Math.PI/2 + idx * Math.PI * 2 / 5;
+  const px = Math.cos(a) * pr * 0.95;
+  const py = Math.sin(a) * pr * 0.95;
+  if(i===0) ctx.moveTo(px,py);
+  else ctx.lineTo(px,py);
 }
-
 ctx.closePath();
 ctx.stroke();
+
+// 중앙 원
+ctx.beginPath();
+ctx.arc(0,0,pr*0.12,0,Math.PI*2);
+ctx.stroke();
+
+ctx.restore();
           // removed the two blue inner orbs inside the body ring per user request
           ctx.restore();
         }catch(err){
