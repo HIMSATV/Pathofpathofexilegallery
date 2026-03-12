@@ -17113,7 +17113,7 @@ function useLightningBeam(skill){
   const muzzle = 34;
   const bodyCastY = 20;
   const sx = player.x + aim.x * muzzle;
-  const sy = player.y + bodyCastY + aim.y * 4;
+  const sy = player.y + bodyCastY;
 
   for(const e of enemies){
     if(!e || e.hp <= 0) continue;
