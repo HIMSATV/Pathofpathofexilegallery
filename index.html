@@ -17210,8 +17210,8 @@ ctx.lineTo(camX + p2.x - pp.x, camY + p2.y - pp.y + 20);
     spawnSkillProjectile({
       kind: "fireball",
       // 몸통 높이 + 몸 앞쪽에서 발사되도록 조정
-      x: player.x + dx * 18,
-      y: player.y + 18 + dy * 8,
+      x: player.x,
+      y: player.y + 40,
       dx,
       dy,
       speed: skill.projectileSpeed,
