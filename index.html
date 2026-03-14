@@ -15153,10 +15153,7 @@ window.addEventListener("load", function(){
     ctx.translate(sx, sy);
     ctx.globalAlpha *= alpha;
 
-    ctx.fillStyle = 'rgba(60,0,0,0.10)';
-    ctx.beginPath();
-    ctx.ellipse(dirX*3, 13 + sink, 12, 4.2, 0, 0, Math.PI*2);
-    ctx.fill();
+    
 
     if(prevDraw){
       const savedDead = e.dead;
