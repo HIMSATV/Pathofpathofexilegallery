@@ -25061,113 +25061,74 @@ ctx.restore();
   }
 
   function drawFireFX(sx, sy, e, age, progress){
-    const baseA = clamp(1 - progress, 0, 1);
-    const pillarH = 16 + age * 2.8 + progress * 22;
-    const pillarW = (e.type === 'demon' ? 17 : e.type === 'orc' ? 14 : 12) + (1-progress) * 3;
+  const flames = e.type === "demon" ? 16 : 11;
 
-    // ✅ 불기둥 본체: 바깥 주황층 + 안쪽 노란 코어
-    ctx.save();
-    ctx.globalCompositeOperation = 'screen';
+  // 바닥 기준점
+  const groundY = sy + 10;
 
-    const outerGrad = ctx.createRadialGradient(sx, sy + 4, 2, sx, sy - pillarH * 0.22, pillarW * 1.45);
-    outerGrad.addColorStop(0.00, `rgba(255,245,190,${baseA*0.38})`);
-    outerGrad.addColorStop(0.28, `rgba(255,176,70,${baseA*0.42})`);
-    outerGrad.addColorStop(0.72, `rgba(255,82,20,${baseA*0.24})`);
-    outerGrad.addColorStop(1.00, 'rgba(255,82,20,0)');
-    ctx.fillStyle = outerGrad;
+  for(let i=0; i<flames; i++){
+    const seed = (e.x*0.021 + e.y*0.037 + i*1.731);
+
+    // 좌우로 퍼지는 폭
+    const spreadX = (rand01(seed) - 0.5) * (e.type === "demon" ? 24 : 16);
+
+    // 바닥에서 위로 조금만 흔들리게
+    const flicker = Math.sin(age*0.35 + seed*7.0) * 3;
+    const lift = rand01(seed+2.1) * (8 + age*0.15);
+
+    const px = sx + spreadX;
+    const py = groundY - lift + flicker;
+
+    // 시간이 지날수록 점점 작아짐
+    const baseSize = (e.type === "demon" ? 16 : 11);
+    const size = Math.max(1.2, baseSize - age*0.22 + rand01(seed+5.3)*2.4);
+
+    const g = ctx.createRadialGradient(px, py, 0, px, py, size);
+    g.addColorStop(0.00, `rgba(255,245,180,${0.85*(1-progress)})`);
+    g.addColorStop(0.25, `rgba(255,210,90,${0.80*(1-progress)})`);
+    g.addColorStop(0.60, `rgba(255,120,30,${0.65*(1-progress)})`);
+    g.addColorStop(1.00, `rgba(120,20,0,0)`);
+
+    ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.ellipse(sx, sy - pillarH * 0.24, pillarW * 1.15, pillarH * 0.92, 0, 0, Math.PI * 2);
+    ctx.arc(px, py, size, 0, Math.PI*2);
     ctx.fill();
-
-    const innerGrad = ctx.createRadialGradient(sx, sy + 2, 1, sx, sy - pillarH * 0.28, pillarW * 0.72);
-    innerGrad.addColorStop(0.00, `rgba(255,255,245,${baseA*0.34})`);
-    innerGrad.addColorStop(0.22, `rgba(255,245,150,${baseA*0.42})`);
-    innerGrad.addColorStop(0.62, `rgba(255,170,50,${baseA*0.28})`);
-    innerGrad.addColorStop(1.00, 'rgba(255,170,50,0)');
-    ctx.fillStyle = innerGrad;
-    ctx.beginPath();
-    ctx.ellipse(sx, sy - pillarH * 0.26, pillarW * 0.55, pillarH * 0.74, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // ✅ 바닥 폭발 고리
-    const ringA = baseA * 0.55;
-    ctx.lineWidth = 2.2;
-    ctx.strokeStyle = `rgba(255,150,60,${ringA})`;
-    ctx.beginPath();
-    ctx.ellipse(sx, sy + 9, pillarW * (0.9 + progress*0.35), 5.5 + progress*2.5, 0, 0, Math.PI*2);
-    ctx.stroke();
-    ctx.lineWidth = 1.0;
-    ctx.strokeStyle = `rgba(255,235,150,${ringA*0.85})`;
-    ctx.beginPath();
-    ctx.ellipse(sx, sy + 9, pillarW * (0.52 + progress*0.18), 2.6 + progress*1.3, 0, 0, Math.PI*2);
-    ctx.stroke();
-
-    // ✅ 위로 치솟는 화염 혀
-    const tongues = e.type === 'demon' ? 8 : 6;
-    for(let i=0;i<tongues;i++){
-      const sd = (e.x||0)*0.027 + (e.y||0)*0.021 + i*3.117;
-      const side = (rand01(sd)-0.5) * pillarW * 1.1;
-      const lift = pillarH * (0.42 + rand01(sd+1.4)*0.42);
-      const bend = (rand01(sd+2.8)-0.5) * 7;
-      const x1 = sx + side * 0.22;
-      const y1 = sy + 8;
-      const cx = sx + side + bend;
-      const cy = sy - lift * 0.55;
-      const x2 = sx + side * 0.55 + bend * 0.8;
-      const y2 = sy - lift;
-
-      ctx.lineCap = 'round';
-      ctx.lineWidth = 3.0 - progress*0.7;
-      ctx.strokeStyle = `rgba(255,165,60,${baseA*0.34})`;
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.quadraticCurveTo(cx, cy, x2, y2);
-      ctx.stroke();
-
-      ctx.lineWidth = 1.35;
-      ctx.strokeStyle = `rgba(255,245,180,${baseA*0.66})`;
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.quadraticCurveTo(cx, cy, x2, y2);
-      ctx.stroke();
-    }
-
-    // ✅ 불똥
-    const sparks = e.type === 'demon' ? 18 : 14;
-    for(let i=0;i<sparks;i++){
-      const sd = (e.x||0)*0.019 + (e.y||0)*0.033 + i*2.491;
-      const ang = -Math.PI/2 + (rand01(sd)-0.5) * 0.95;
-      const spd = 8 + rand01(sd+2.2) * 11;
-      const t = age * (0.9 + rand01(sd+1.6)*0.45) + rand01(sd+4.1)*3.2;
-      const px = sx + Math.cos(ang) * t * 0.55 + (rand01(sd+5.7)-0.5) * 6;
-      const py = sy + 8 + Math.sin(ang) * spd * (t/18) + t*t*0.03;
-      const r = Math.max(0.7, 2.2 - age*0.08 + rand01(sd+7.2)*0.9);
-      const a = clamp(baseA * (0.55 + rand01(sd+8.4)*0.35), 0, 1);
-      ctx.beginPath();
-      ctx.fillStyle = `rgba(255,140,40,${a})`;
-      ctx.arc(px, py, r, 0, Math.PI*2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.fillStyle = `rgba(255,245,170,${a*0.72})`;
-      ctx.arc(px, py-0.8, r*0.42, 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    // ✅ 상단 연기/열기 잔상
-    const smoke = 4;
-    for(let i=0;i<smoke;i++){
-      const sd = (e.x||0)*0.071 + (e.y||0)*0.029 + i*4.91;
-      const px = sx + (rand01(sd)-0.5) * pillarW * 0.9;
-      const py = sy - pillarH * (0.55 + i*0.12) - age * 0.25;
-      const rx = 4 + rand01(sd+1.5) * 4 + progress * 2;
-      const ry = 7 + rand01(sd+2.7) * 6 + progress * 3;
-      ctx.beginPath();
-      ctx.fillStyle = `rgba(80,40,30,${baseA*0.10})`;
-      ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI*2);
-      ctx.fill();
-    }
   }
+
+  // 바닥 화염 띠(불이 붙어있는 느낌)
+  const floorW = e.type === "demon" ? 34 : 24;
+  const floorH = e.type === "demon" ? 10 : 7;
+  const floorAlpha = Math.max(0, 0.45 * (1 - progress));
+
+  const floorGrad = ctx.createRadialGradient(sx, groundY, 0, sx, groundY, floorW);
+  floorGrad.addColorStop(0.0, `rgba(255,140,40,${floorAlpha})`);
+  floorGrad.addColorStop(0.5, `rgba(200,50,10,${floorAlpha*0.7})`);
+  floorGrad.addColorStop(1.0, `rgba(60,0,0,0)`);
+
+  ctx.fillStyle = floorGrad;
+  ctx.beginPath();
+  ctx.ellipse(sx, groundY, floorW, floorH, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // 작은 불똥
+  for(let i=0; i<5; i++){
+    const seed = i*9.17 + e.x*0.01 + e.y*0.02;
+    const ang = (rand01(seed)-0.5) * 1.2;
+    const dist = rand01(seed+2.3) * 10;
+    const up = age*0.45 + rand01(seed+4.1) * 6;
+
+    ctx.beginPath();
+    ctx.arc(
+      sx + Math.cos(ang) * dist,
+      groundY - up,
+      Math.max(0.6, 1.4 - age*0.03),
+      0,
+      Math.PI*2
+    );
+    ctx.fillStyle = `rgba(255,190,70,${0.65*(1-progress)})`;
+    ctx.fill();
+  }
+}
 
   function drawColdFX(sx, sy, e, age, progress){
 
