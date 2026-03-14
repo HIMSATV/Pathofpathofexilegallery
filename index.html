@@ -6160,15 +6160,7 @@ function drawIsoEnemyDeathBurst(sx, sy, b){
 }
 
 function __drawEnemyShadow(rx, ry, sx=1, sy=1, alpha=0.30){
-  if(!SHOW_SHADOWS) return;
-  ctx.save();
-  ctx.translate(0, ry);
-  ctx.scale(sx, sy);
-  ctx.fillStyle = `rgba(0,0,0,${alpha})`;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, rx, ry*0.55, 0, 0, Math.PI*2);
-  ctx.fill();
-  ctx.restore();
+  return;
 }
 
 function __drawEnemyLegs(stance=1, color="rgba(30,30,30,0.92)"){
