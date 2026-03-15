@@ -4116,13 +4116,11 @@ function resetPassivesFree(){
   rebuildPassiveMods();
   recalcFromGear();
   renderAllPanels();
-  if(which === "passive"){
-    setTimeout(()=>{
-      renderPassiveTree();
-      fitPassiveTreeToViewport();
-      renderPassiveTree();
-    }, 0);
-  }
+setTimeout(()=>{
+  renderPassiveTree();
+  fitPassiveTreeToViewport();
+  renderPassiveTree();
+},0);
 }
 function passiveNodeState(id){ return hasPassive(id) ? 'allocated' : (canAllocatePassive(id) ? 'available' : 'locked'); }
 function ensurePassiveTreeUI(){
