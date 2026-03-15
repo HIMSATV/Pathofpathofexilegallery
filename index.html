@@ -7029,16 +7029,17 @@ function drawIsoOrcWarriorSprite(sx, sy, e){
     bodyHeight:0.72,
     shoulderScale:1.08,
     armLen:0.48,
-    weaponGrip:"rgba(82,56,28,0.98)",
-    weaponBlade:"rgba(178,184,194,0.96)",
-    weaponLength:0.04,
+    weaponGrip:"rgba(82,56,28,0.98)",     // 손잡이
+weaponBlade:"rgba(140,140,140,0.96)", // 망치 머리
+weaponLength:0.11,                    // 길이 증가
+weaponCross:"rgba(90,90,90,0.95)",     // 망치 금속
     beltFill:"rgba(62,42,18,0.95)",
     faceStripe:"rgba(64,82,24,0.90)",
     helmBand:"rgba(72,46,20,0.90)",
     torsoWidth:0.82,
     torsoHeight:0.66,
-    headRadius:0.17,
-    weaponCross:"rgba(96,96,96,0.95)"
+    headRadius:0.17
+    
   });
 }
 
@@ -7070,18 +7071,19 @@ function drawIsoDemonSprite(sx, sy, e){
     bodyHeight:0.74,
     shoulderScale:1.00,
     armLen:0.50,
-    weaponGrip:"rgba(90,36,16,0.98)",
-    weaponBlade:"rgba(255,124,26,0.98)",
-    weaponGlow:"rgba(255,230,120,0.95)",
-    weaponLength:0.08,
-    weaponDrop:0.02,
+    weaponGrip:"rgba(70,28,18,0.98)",     // 채찍 손잡이
+weaponBlade:"rgba(40,12,8,0.98)",     // 가죽 채찍
+weaponGlow:"rgba(255,90,40,0.80)",    // 악마 불빛
+weaponLength:0.18,                    // 채찍 길게
+weaponDrop:0.08,                      // 아래로 휘어짐
+weaponCross:"rgba(255,60,20,0.92)",    // 불꽃 끝
     beltFill:"rgba(24,8,8,0.96)",
     faceStripe:"rgba(88,18,18,0.90)",
     auraFill:null,
     torsoWidth:0.84,
     torsoHeight:0.68,
-    headRadius:0.17,
-    weaponCross:"rgba(255,180,80,0.92)"
+    headRadius:0.17
+    
   });
 }
 
