@@ -6202,7 +6202,7 @@ function __drawEnemyHead(fill, outline, eyeColor="rgba(255,70,70,0.95)", scale=1
 }
 
 function drawIsoZombieSprite(sx, sy, e){
-  const r = (e.radius ?? 14) * 0.88;
+  const r = (e.radius ?? 14) * 1.00;
   const outline = __enemyStrokeByElite(e, "rgba(22,22,18,0.94)");
   const bob = __enemyBreathe(e, 1.7, 1.0);
   const hit = __enemyHitNudge(e);
@@ -6279,7 +6279,7 @@ function drawIsoZombieSprite(sx, sy, e){
 }
 
 function drawIsoSkeletonSprite(sx, sy, e){
-  const r = (e.radius ?? 14) * 0.82;
+  const r = (e.radius ?? 14) * 1.00;
   const outline = __enemyStrokeByElite(e, "rgba(28,28,28,0.96)");
   const bob = __enemyBreathe(e, 2.3, 0.9);
   const hit = __enemyHitNudge(e);
@@ -6372,7 +6372,7 @@ function drawIsoSkeletonSprite(sx, sy, e){
 }
 
 function drawIsoArcherSprite(sx, sy, e){
-  const r = (e.radius ?? 14) * 0.92;
+  const r = (e.radius ?? 14) * 1.00;
   const outline = __enemyStrokeByElite(e, "rgba(18,18,18,0.96)");
   const bob = __enemyBreathe(e, 1.8, 0.9);
   const hit = __enemyHitNudge(e);
@@ -6461,7 +6461,7 @@ function drawIsoArcherSprite(sx, sy, e){
 }
 
 function drawIsoMageSprite(sx, sy, e){
-  const r = (e.radius ?? 14) * 0.90;
+  const r = (e.radius ?? 14) * 1.00;
   const outline = __enemyStrokeByElite(e, "rgba(18,18,22,0.96)");
   const bob = __enemyBreathe(e, 1.4, 1.1);
   const hit = __enemyHitNudge(e);
@@ -6540,7 +6540,7 @@ function drawIsoMageSprite(sx, sy, e){
 }
 
 function drawIsoMeleeSprite(sx, sy, e){
-  const r = (e.radius ?? 14) * 0.82;
+  const r = (e.radius ?? 14) * 1.50;
   const outline = __enemyStrokeByElite(e, "rgba(18,18,18,0.96)");
   const bob = __enemyBreathe(e, 2.0, 0.9);
   const hit = __enemyHitNudge(e);
