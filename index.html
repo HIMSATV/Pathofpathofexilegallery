@@ -15517,10 +15517,10 @@ window.addEventListener("load", function(){
 
 
 (function(){
-  const hud = document.getElementById("hudBtns");
-  const passive = document.getElementById("btnPassive");
-  const bag = document.getElementById("btnBag");
-  const equip = document.getElementById("btnEquip");
+  var hud = document.getElementById("hudBtns");
+var passive = document.getElementById("btnPassive");
+var bag = document.getElementById("btnBag");
+var equip = document.getElementById("btnEquip");
   if(equip) equip.remove();
 
   function normalizeHudOrder(){
@@ -21577,7 +21577,7 @@ const floorY = camY + 70;
   btnSkills.type = 'button';
   btnSkills.title = '스킬젬';
   btnSkills.textContent = '💎';
-  if(hudBtns) const __bagBtn = document.getElementById("btnBag");
+  if(hudBtns) var __bagBtn = document.getElementById("btnBag");
   if(__bagBtn && __bagBtn.parentNode === hudBtns){
     hudBtns.insertBefore(btnSkills, __bagBtn);
   }else{
