@@ -4974,8 +4974,9 @@ function __fixStickCenter(){
   if(!pad || !stick) return;
 
   const r = pad.getBoundingClientRect();
-  const sw = stick.offsetWidth || 40;
-  const sh = stick.offsetHeight || 40;
+  const rect = stick.getBoundingClientRect();
+const sw = rect.width;
+const sh = rect.height;
 
   stick.style.left = ((r.width - sw)/2) + "px";
   stick.style.top  = ((r.height - sh)/2) + "px";
