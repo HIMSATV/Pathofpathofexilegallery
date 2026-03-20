@@ -5918,9 +5918,52 @@ function canEnemyMoveTo(enemy, x, y){
 }
 function isFloorTile(tx, ty){ return !!(map[ty] && map[ty][tx] === 0); }
 function canSpawnEnemyAt(enemy, x, y){ return canEnemyMoveTo(enemy, x, y); }
+function isSolidEnemyForBodyBlock(e){
+  if(!e) return false;
+  if(e.type === "boss" && e.dead) return false;
+  if(e.hp <= 0) return false;
+  if(e.pack && !e.pack.activated) return false;
+  return true;
+}
+
+function canPlayerMoveToBody(x, y){
+  if(!canMoveTo(x, y)) return false;
+
+  const pad = 2;
+  for(const e of enemies){
+    if(!isSolidEnemyForBodyBlock(e)) continue;
+
+    const er = Math.max(10, (typeof e.radius === "number" ? e.radius : 14));
+    const dx = (e.x || 0) - x;
+    const dy = (e.y || 0) - y;
+    const minDist = (player.radius || 14) + er + pad;
+
+    if(dx*dx + dy*dy < minDist * minDist){
+      return false;
+    }
+  }
+  return true;
+}
+
+function canEnemyMoveToBody(enemy, x, y){
+  if(!canEnemyMoveTo(enemy, x, y)) return false;
+
+  const pad = 2;
+  const er = Math.max(10, (enemy && typeof enemy.radius === "number" ? enemy.radius : 14));
+  const dx = x - (player.x || 0);
+  const dy = y - (player.y || 0);
+  const minDist = er + (player.radius || 14) + pad;
+
+  if(dx*dx + dy*dy < minDist * minDist){
+    return false;
+  }
+  return true;
+}
+
 function moveEnemyWithCollision(enemy, dx, dy, steps = 6){
   if(!enemy) return;
-  steps = Math.max(1, steps|0);
+  steps = Math.max(1, steps | 0);
+
   const sx = dx / steps;
   const sy = dy / steps;
 
@@ -5928,8 +5971,8 @@ function moveEnemyWithCollision(enemy, dx, dy, steps = 6){
     const nx = enemy.x + sx;
     const ny = enemy.y + sy;
 
-    if(canEnemyMoveTo(enemy, nx, enemy.y)) enemy.x = nx;
-    if(canEnemyMoveTo(enemy, enemy.x, ny)) enemy.y = ny;
+    if(canEnemyMoveToBody(enemy, nx, enemy.y)) enemy.x = nx;
+    if(canEnemyMoveToBody(enemy, enemy.x, ny)) enemy.y = ny;
   }
 }
 
@@ -6009,9 +6052,8 @@ function damagePlayer(dmg, knockX, knockY, src){
   let nx = player.x + knockX;
   let ny = player.y + knockY;
 
-  if(canMoveTo(nx, player.y)) player.x = nx;
-  if(canMoveTo(player.x, ny)) player.y = ny;
-
+  if(canPlayerMoveToBody(nx, player.y)) player.x = nx;
+if(canPlayerMoveToBody(player.x, ny)) player.y = ny;
   if(player.hp <= 0) handleGameOver();
 }
 
@@ -9778,12 +9820,8 @@ function updateCombatSystem(){
 }
 
 function updateMovement(){
-  // ✅ Isometric input mapping:
-  // Input (screen space): right/left/up/down from keys & joystick
-  // World movement (grid space) is rotated 45° so controls feel like ARPG isometric
   const moveSpeed = player.speed * (player.buffs?.spdMul ?? 1);
 
-  // screen-space input (ix, iy) in [-1,1]
   let ix = 0;
   let iy = 0;
 
@@ -9795,25 +9833,21 @@ function updateMovement(){
   ix += joyDX;
   iy += joyDY;
 
-  // deadzone + normalize (prevents faster diagonal)
   const mag = Math.hypot(ix, iy);
   if(mag < 0.08){
-    return; // no movement input
+    return;
   }
   if(mag > 1){
     ix /= mag;
     iy /= mag;
   }
 
-  // Update facing direction based on screen-space input
   if(Math.abs(ix) > Math.abs(iy)){
     player.dir = (ix > 0) ? "right" : "left";
   }else{
     player.dir = (iy > 0) ? "down" : "up";
   }
 
-  // Convert screen-space vector -> world/grid-space vector
-  // Using inverse of iso projection: screenX ~ (x - y), screenY ~ (x + y)
   const wx = (iy + ix) * 0.5;
   const wy = (iy - ix) * 0.5;
 
@@ -9823,8 +9857,8 @@ function updateMovement(){
   const newX = player.x + dx;
   const newY = player.y + dy;
 
-  if(canMoveTo(newX, player.y)) player.x = newX;
-  if(canMoveTo(player.x, newY)) player.y = newY;
+  if(canPlayerMoveToBody(newX, player.y)) player.x = newX;
+  if(canPlayerMoveToBody(player.x, newY)) player.y = newY;
 }
 
 function updateInvulnerability(){
