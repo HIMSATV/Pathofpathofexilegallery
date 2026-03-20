@@ -18423,54 +18423,7 @@ window.addEventListener("load", function(){
     return typeof prevUpdateMelee === 'function' ? prevUpdateMelee.apply(this, arguments) : undefined;
   };
 
-  const prevUpdateMage = window.updateMage;
-  window.updateMage = function(e){
-    if(!e || e.dead) return;
-    ensureV13(e);
-    if(e.type !== 'mage'){
-      return typeof prevUpdateMage === 'function' ? prevUpdateMage.apply(this, arguments) : undefined;
-    }
-
-    const px = N(window.player?.x,0), py = N(window.player?.y,0);
-    const pVx = N(window.player?.vx,0), pVy = N(window.player?.vy,0);
-    const dx = px - N(e.x,0), dy = py - N(e.y,0);
-    const dist = Math.hypot(dx,dy) || 1;
-
-    e.aiStrafeTimer = N(e.aiStrafeTimer,20) - 1;
-    if(e.aiStrafeTimer <= 0){
-      e.aiStrafeDir = (e.aiStrafeDir || 1) * -1;
-      e.aiStrafeTimer = 22 + Math.floor(Math.random()*28);
-    }
-
-    if(dist < 150) steerAway(e, 1.12);
-    else if(dist > 280) steerToward(e, 0.76);
-    strafe(e, 0.55, e.aiStrafeDir || 1);
-
-    e.castCooldown = N(e.castCooldown,70) - 1;
-    e.predictiveCooldown = N(e.predictiveCooldown,60) - 1;
-
-    if(e.castCooldown <= 0 && dist < 430){
-      const lead = CL(dist / 58, 1.2, 4.8);
-      const tx = px + pVx * 18 * lead;
-      const ty = py + pVy * 18 * lead;
-      if(typeof window.spawnEnemyFireTrap === 'function'){
-        window.spawnEnemyFireTrap(tx, ty, Math.max(1, Math.floor(N(e.damage,1) * 0.90)), 1.18, 1.08);
-      }else if(typeof window.spawnFireZone === 'function'){
-        window.spawnFireZone(tx, ty, Math.max(1, Math.floor(N(e.damage,1) * 0.90)));
-      }
-      if(Array.isArray(window.particles)){
-        for(let i=0;i<10;i++){
-          window.particles.push({
-            x:N(e.x,0), y:N(e.y,0)-8, vx:(Math.random()-0.5)*1.2, vy:-Math.random()*0.9,
-            life:12 + Math.floor(Math.random()*8), alpha:0.65, size:2.2 + Math.random()*1.8, kind:'arrowSpark'
-          });
-        }
-      }
-      e.attackFrame = 18;
-      e.castCooldown = 90 + Math.floor(Math.random()*25);
-    }
-  };
-
+  
   const prevDrawOrc = window.drawIsoOrcWarriorSprite;
   window.drawIsoOrcWarriorSprite = function(sx, sy, e){
     if(!e) return typeof prevDrawOrc === 'function' ? prevDrawOrc.apply(this, arguments) : undefined;
