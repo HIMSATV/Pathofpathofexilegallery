@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>작은 마을</title>
+<style>
+  :root{
+    --bg1:#050505;
+    --bg2:#101010;
+    --line:rgba(255,214,120,.28);
+    --gold:#d8b66a;
+    --gold2:#f0d79a;
+    --text:#e9e4d7;
+    --muted:#a8a29a;
+    --danger:#b85a5a;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; min-height:100%; background:#000; color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+  body{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:
+      radial-gradient(circle at 50% 22%, rgba(255,218,140,.08), rgba(255,218,140,0) 24%),
+      radial-gradient(circle at 50% 72%, rgba(80,120,255,.05), rgba(80,120,255,0) 30%),
+      linear-gradient(180deg, #0a0a0a 0%, #040404 100%);
+  }
+  .shell{
+    width:min(92vw, 560px);
+    border-radius:22px;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(18,18,18,.98), rgba(7,7,7,.98));
+    box-shadow:0 24px 80px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.03);
+    padding:26px 20px 20px;
+  }
+  .title{
+    text-align:center;
+    font-size:clamp(26px, 5vw, 38px);
+    font-weight:900;
+    color:var(--gold2);
+    letter-spacing:-0.03em;
+    margin:0;
+  }
+  .sub{
+    margin:10px 0 0;
+    text-align:center;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.45;
+  }
+  .savebox{
+    margin-top:18px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.08);
+    background:linear-gradient(180deg, rgba(23,23,23,.96), rgba(10,10,10,.96));
+    padding:16px 14px;
+  }
+  .savehead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .savehead strong{ color:var(--gold2); font-size:15px; }
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:74px;
+    height:28px;
+    padding:0 10px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.04);
+    font-size:12px;
+    font-weight:800;
+    color:var(--text);
+  }
+  .badge.empty{ color:#b5b0a6; border-color:rgba(255,255,255,.08); }
+  .meta{
+    color:var(--text);
+    font-size:14px;
+    line-height:1.6;
+    min-height:72px;
+    white-space:pre-line;
+  }
+  .actions{
+    margin-top:18px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  button{
+    width:100%;
+    min-height:56px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.12);
+    background:linear-gradient(180deg, rgba(28,28,28,.98), rgba(11,11,11,.98));
+    color:var(--text);
+    font-size:16px;
+    font-weight:900;
+    letter-spacing:-0.02em;
+  }
+  button.primary{
+    border-color:rgba(216,182,106,.38);
+    color:var(--gold2);
+    box-shadow:0 0 0 1px rgba(216,182,106,.08) inset;
+  }
+  button.danger{
+    border-color:rgba(184,90,90,.40);
+    color:#f0b3b3;
+  }
+  button:disabled{
+    opacity:.45;
+    filter:saturate(.6);
+  }
+  .hint{
+    margin-top:14px;
+    color:#8bbdf5;
+    font-size:12px;
+    line-height:1.5;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <h1 class="title">작은 마을</h1>
+    <p class="sub">이어하기와 새로운 시작은 이 메뉴에서 선택합니다.<br>게임 저장은 마을 상태를 기준으로 자동으로 이어집니다.</p>
+
+    <div class="savebox">
+      <div class="savehead">
+        <strong>현재 저장</strong>
+        <span class="badge empty" id="saveBadge">없음</span>
+      </div>
+      <div class="meta" id="saveMeta">저장된 캐릭터가 없습니다.</div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="continueBtn" type="button">이어하기</button>
+      <button id="newBtn" type="button">새로운 시작</button>
+      <button class="danger" id="deleteBtn" type="button">저장 삭제</button>
+    </div>
+
+    <div class="hint">같은 폴더에 있는 <strong>game.html</strong> 파일로 연결됩니다.<br>GitHub Pages에서는 이 파일을 <strong>index.html</strong>로 두면 바로 열립니다.</div>
+  </div>
+
+<script>
+const SAVE_KEY = 'poe_gallery_save_slot_1';
+const ACTION_KEY = 'poe_gallery_menu_action';
+const GAME_FILE = 'game.html';
+
+function readSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    return (parsed && typeof parsed === 'object') ? parsed : null;
+  }catch(_){
+    return null;
+  }
+}
+
+function formatDate(ts){
+  const d = new Date(Number(ts || 0));
+  if(!Number.isFinite(d.getTime())) return '-';
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return `${y}-${m}-${day} ${hh}:${mm}`;
+}
+
+function refreshSaveBox(){
+  const data = readSave();
+  const badge = document.getElementById('saveBadge');
+  const meta = document.getElementById('saveMeta');
+  const continueBtn = document.getElementById('continueBtn');
+  const deleteBtn = document.getElementById('deleteBtn');
+
+  if(!data){
+    badge.textContent = '없음';
+    badge.className = 'badge empty';
+    meta.textContent = '저장된 캐릭터가 없습니다.';
+    continueBtn.disabled = true;
+    deleteBtn.disabled = true;
+    return;
+  }
+
+  const level = Number(data?.meta?.level || data?.progression?.level || 1);
+  const unlocked = Number(data?.meta?.unlockedTier || data?.mapProgress?.unlockedTier || 1);
+  const cleared = Number(data?.meta?.lastClearedTier || data?.mapProgress?.lastClearedTier || 0);
+  const savedAt = formatDate(data.savedAt);
+
+  badge.textContent = '저장됨';
+  badge.className = 'badge';
+  meta.textContent = `레벨 ${level}\n해금 지도 티어 ${unlocked} / 마지막 클리어 ${cleared}\n저장 시각 ${savedAt}`;
+  continueBtn.disabled = false;
+  deleteBtn.disabled = false;
+}
+
+function go(action){
+  localStorage.setItem(ACTION_KEY, action);
+  location.href = GAME_FILE;
+}
+
+document.getElementById('continueBtn').addEventListener('click', ()=>{
+  if(!readSave()) return;
+  go('continue');
+});
+
+document.getElementById('newBtn').addEventListener('click', ()=>{
+  const ok = confirm('새로운 시작을 하면 기존 저장은 새 캐릭터로 덮어써집니다. 계속하시겠습니까?');
+  if(!ok) return;
+  go('new');
+});
+
+document.getElementById('deleteBtn').addEventListener('click', ()=>{
+  if(!readSave()) return;
+  const ok = confirm('저장을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
+  if(!ok) return;
+  localStorage.removeItem(SAVE_KEY);
+  localStorage.removeItem(ACTION_KEY);
+  refreshSaveBox();
+});
+
+refreshSaveBox();
+</script>
+</body>
+</html>
