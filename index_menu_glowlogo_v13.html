@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>패스오브패스오브엑자일갤러리</title>
+<style>
+  :root{
+    --bg1:#050505;
+    --bg2:#101010;
+    --line:rgba(255,214,120,.28);
+    --gold:#d8b66a;
+    --gold2:#f0d79a;
+    --text:#e9e4d7;
+    --muted:#a8a29a;
+    --danger:#b85a5a;
+    --glow1:#fff6d6;
+    --glow2:#f0d79a;
+    --glow3:#d8b66a;
+    --glow4:#9fd7ff;
+    --glow5:#7aa3ff;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0;
+    min-height:100%;
+    background:#000;
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  body{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:
+      radial-gradient(circle at 50% 14%, rgba(255,230,170,.08), rgba(255,230,170,0) 20%),
+      radial-gradient(circle at 50% 24%, rgba(216,182,106,.08), rgba(216,182,106,0) 20%),
+      radial-gradient(circle at 50% 72%, rgba(80,120,255,.05), rgba(80,120,255,0) 30%),
+      linear-gradient(180deg, #0a0a0a 0%, #040404 100%);
+  }
+  .shell{
+    width:min(92vw, 560px);
+    border-radius:22px;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(18,18,18,.98), rgba(7,7,7,.98));
+    box-shadow:0 24px 80px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.03);
+    padding:26px 20px 20px;
+  }
+  .logoWrap{
+    margin:2px 0 12px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    text-align:center;
+  }
+  .logoRune{
+    width:74px;
+    height:74px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:34px;
+    font-weight:900;
+    color:#fff1bf;
+    border:1px solid rgba(216,182,106,.34);
+    background:
+      radial-gradient(circle at 50% 44%, rgba(255,247,204,.32), rgba(255,247,204,0) 26%),
+      radial-gradient(circle at 50% 58%, rgba(132,178,255,.18), rgba(132,178,255,0) 44%),
+      linear-gradient(180deg, rgba(24,24,24,.98), rgba(8,8,8,.98));
+    box-shadow:
+      0 0 20px rgba(255,220,160,.14),
+      0 0 34px rgba(120,170,255,.10),
+      inset 0 0 16px rgba(255,214,120,.10);
+    animation:runeGlow 3.0s ease-in-out infinite;
+  }
+  .logoTitle{
+    margin:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    font-size:clamp(30px, 6.0vw, 46px);
+    line-height:0.96;
+    font-weight:1000;
+    letter-spacing:-0.05em;
+    color:var(--glow1);
+    text-transform:uppercase;
+    text-align:center;
+    text-shadow:
+      0 0 6px rgba(255,255,255,.22),
+      0 0 12px rgba(255,244,210,.22),
+      0 0 20px rgba(240,215,154,.22),
+      0 0 34px rgba(159,215,255,.18),
+      0 0 52px rgba(122,163,255,.14);
+    animation:logoGlow 3.2s ease-in-out infinite;
+  }
+  .logoTitle .line{
+    display:block;
+    width:100%;
+  }
+  .logoTitle .line.small{
+    font-size:0.72em;
+    letter-spacing:0.06em;
+  }
+  .logoTitle .line.mid{
+    font-size:1em;
+    letter-spacing:0.00em;
+  }
+  .logoTitle .line.large{
+    font-size:0.86em;
+    letter-spacing:0.08em;
+  }
+  .savebox{
+    margin-top:16px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.08);
+    background:linear-gradient(180deg, rgba(23,23,23,.96), rgba(10,10,10,.96));
+    padding:16px 14px;
+  }
+  .savehead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .savehead strong{
+    color:var(--gold2);
+    font-size:15px;
+  }
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:74px;
+    height:28px;
+    padding:0 10px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.04);
+    font-size:12px;
+    font-weight:800;
+    color:var(--text);
+  }
+  .badge.empty{
+    color:#b5b0a6;
+    border-color:rgba(255,255,255,.08);
+  }
+  .meta{
+    color:var(--text);
+    font-size:14px;
+    line-height:1.6;
+    min-height:84px;
+    white-space:pre-line;
+  }
+  .actions{
+    margin-top:18px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  button{
+    width:100%;
+    min-height:56px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.12);
+    background:linear-gradient(180deg, rgba(28,28,28,.98), rgba(11,11,11,.98));
+    color:var(--text);
+    font-size:16px;
+    font-weight:900;
+    letter-spacing:-0.02em;
+  }
+  button.primary{
+    border-color:rgba(216,182,106,.38);
+    color:var(--gold2);
+    box-shadow:0 0 0 1px rgba(216,182,106,.08) inset;
+  }
+  button.danger{
+    border-color:rgba(184,90,90,.40);
+    color:#f0b3b3;
+  }
+  button:disabled{
+    opacity:.45;
+    filter:saturate(.6);
+  }
+  .footerBrand{
+    margin-top:16px;
+    padding-top:12px;
+    border-top:1px solid rgba(255,255,255,.08);
+    color:#d7cfbf;
+    font-size:12px;
+    line-height:1.7;
+    text-align:center;
+    white-space:pre-line;
+  }
+  .footerBrand strong{
+    display:block;
+    margin-bottom:4px;
+    color:var(--gold2);
+    font-size:13px;
+    letter-spacing:-0.02em;
+  }
+  @keyframes logoGlow{
+    0%,100%{
+      text-shadow:
+        0 0 6px rgba(255,255,255,.20),
+        0 0 12px rgba(255,244,210,.20),
+        0 0 20px rgba(240,215,154,.20),
+        0 0 34px rgba(159,215,255,.16),
+        0 0 52px rgba(122,163,255,.12);
+      filter:brightness(1);
+    }
+    50%{
+      text-shadow:
+        0 0 8px rgba(255,255,255,.28),
+        0 0 16px rgba(255,244,210,.28),
+        0 0 28px rgba(240,215,154,.30),
+        0 0 44px rgba(159,215,255,.24),
+        0 0 66px rgba(122,163,255,.18);
+      filter:brightness(1.04);
+    }
+  }
+  @keyframes runeGlow{
+    0%,100%{
+      transform:scale(1);
+      box-shadow:
+        0 0 20px rgba(255,220,160,.14),
+        0 0 34px rgba(120,170,255,.10),
+        inset 0 0 16px rgba(255,214,120,.10);
+    }
+    50%{
+      transform:scale(1.03);
+      box-shadow:
+        0 0 26px rgba(255,230,180,.20),
+        0 0 46px rgba(130,180,255,.14),
+        inset 0 0 18px rgba(255,214,120,.14);
+    }
+  }
+    50%{
+      transform:scale(1.04);
+      box-shadow:
+        0 0 28px rgba(255,156,56,.20),
+        0 0 52px rgba(255,92,32,.14),
+        inset 0 0 18px rgba(255,194,74,.14);
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="logoWrap">
+      <div class="logoRune">✦</div>
+      <h1 class="logoTitle">
+        <span class="line small">PATH OF</span>
+        <span class="line mid">PATH OF EXILE</span>
+        <span class="line large">GALLERY</span>
+      </h1>
+    </div>
+
+    <div class="savebox">
+      <div class="savehead">
+        <strong>현재 저장</strong>
+        <span class="badge empty" id="saveBadge">없음</span>
+      </div>
+      <div class="meta" id="saveMeta">저장된 캐릭터가 없습니다.</div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="continueBtn" type="button">이어하기</button>
+      <button id="newBtn" type="button">새로운 시작</button>
+      <button class="danger" id="deleteBtn" type="button">저장 삭제</button>
+    </div>
+
+    <div class="footerBrand"><strong>패스오브패스오브엑자일갤러리</strong>DC@론다트
+YOUTUBE@힘사TV
+INSTAR@hosukgun</div>
+  </div>
+
+<script>
+const SAVE_KEY = 'poe_gallery_save_slot_1';
+const ACTION_KEY = 'poe_gallery_menu_action';
+const GAME_FILE = 'game.html';
+
+const CLASS_NAME_BY_START = Object.freeze({
+  element1:'원소술사',
+  atk1:'조틀리의 사자',
+  crit1:'암살자',
+  armor1:'드루이드',
+  melee1:'슬레이어',
+  life1:'광전사',
+  spell1:'인퀴지터',
+  cast1:'혼돈술사'
+});
+
+function readSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    return (parsed && typeof parsed === 'object') ? parsed : null;
+  }catch(_){
+    return null;
+  }
+}
+
+function formatDate(ts){
+  const d = new Date(Number(ts || 0));
+  if(!Number.isFinite(d.getTime())) return '-';
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return `${y}-${m}-${day} ${hh}:${mm}`;
+}
+
+function inferJobName(data){
+  const root = String(
+    data?.progression?.rootPassive ||
+    data?.meta?.rootPassive ||
+    ''
+  );
+  if(root && CLASS_NAME_BY_START[root]) return CLASS_NAME_BY_START[root];
+
+  const passives = data?.player?.passives || {};
+  for(const key of Object.keys(CLASS_NAME_BY_START)){
+    if(passives && passives[key]) return CLASS_NAME_BY_START[key];
+  }
+  return '미선택';
+}
+
+function refreshSaveBox(){
+  const data = readSave();
+  const badge = document.getElementById('saveBadge');
+  const meta = document.getElementById('saveMeta');
+  const continueBtn = document.getElementById('continueBtn');
+  const deleteBtn = document.getElementById('deleteBtn');
+
+  if(!data){
+    badge.textContent = '없음';
+    badge.className = 'badge empty';
+    meta.textContent = '저장된 캐릭터가 없습니다.';
+    continueBtn.disabled = true;
+    deleteBtn.disabled = true;
+    return;
+  }
+
+  const level = Number(data?.meta?.level || data?.progression?.level || 1);
+  const job = inferJobName(data);
+  const unlocked = Number(data?.meta?.unlockedTier || data?.mapProgress?.unlockedTier || 1);
+  const cleared = Number(data?.meta?.lastClearedTier || data?.mapProgress?.lastClearedTier || 0);
+  const savedAt = formatDate(data.savedAt);
+
+  badge.textContent = '저장됨';
+  badge.className = 'badge';
+  meta.textContent = `레벨 ${level} · 직업 ${job}\n해금 지도 티어 ${unlocked} / 마지막 클리어 ${cleared}\n저장 시각 ${savedAt}`;
+  continueBtn.disabled = false;
+  deleteBtn.disabled = false;
+}
+
+function go(action){
+  localStorage.setItem(ACTION_KEY, action);
+  location.href = GAME_FILE;
+}
+
+document.getElementById('continueBtn').addEventListener('click', ()=>{
+  if(!readSave()) return;
+  go('continue');
+});
+
+document.getElementById('newBtn').addEventListener('click', ()=>{
+  const ok = confirm('새로운 시작을 하면 기존 저장은 새 캐릭터로 덮어써집니다. 계속하시겠습니까?');
+  if(!ok) return;
+  go('new');
+});
+
+document.getElementById('deleteBtn').addEventListener('click', ()=>{
+  if(!readSave()) return;
+  const ok = confirm('저장을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
+  if(!ok) return;
+  localStorage.removeItem(SAVE_KEY);
+  localStorage.removeItem(ACTION_KEY);
+  refreshSaveBox();
+});
+
+refreshSaveBox();
+</script>
+</body>
+</html>
