@@ -10435,22 +10435,22 @@ const ORB_DROP_TABLE = Object.freeze([
   { key:"transmute",    label:"진화의 오브",   rarityKey:"magic",  chance:0.180 },
   { key:"alteration",  label:"변화의 오브",   rarityKey:"magic",  chance:0.160 },
   { key:"augmentation",label:"확장의 오브",   rarityKey:"magic",  chance:0.120 },
-  { key:"alchemy",     label:"연금의 오브",   rarityKey:"rare",   chance:0.070 },
-  { key:"chaos",       label:"카오스 오브",   rarityKey:"rare",   chance:0.040 },
-  { key:"regal",       label:"제왕의 오브",   rarityKey:"rare",   chance:0.022 },
-  { key:"scour",       label:"정제의 오브",   rarityKey:"rare",   chance:0.020 },
-  { key:"annul",       label:"소멸의 오브",   rarityKey:"unique", chance:0.012 },
-  { key:"divine",      label:"신성의 오브",   rarityKey:"unique", chance:0.009 },
-  { key:"exalt",       label:"엑잘의 오브",   rarityKey:"unique", chance:0.006 },
-  { key:"corrupt",     label:"타락의 오브",   rarityKey:"unique", chance:0.025 }
+  { key:"alchemy",     label:"연금의 오브",   rarityKey:"rare",   chance:0.200 },
+  { key:"chaos",       label:"카오스 오브",   rarityKey:"rare",   chance:0.140 },
+  { key:"regal",       label:"제왕의 오브",   rarityKey:"rare",   chance:0.100 },
+  { key:"scour",       label:"정제의 오브",   rarityKey:"rare",   chance:0.090 },
+  { key:"annul",       label:"소멸의 오브",   rarityKey:"unique", chance:0.070 },
+  { key:"divine",      label:"신성의 오브",   rarityKey:"unique", chance:0.060 },
+  { key:"exalt",       label:"엑잘의 오브",   rarityKey:"unique", chance:0.060 },
+  { key:"corrupt",     label:"타락의 오브",   rarityKey:"unique", chance:0.120 }
 ]);
 
 function rollOrbDrop(source="mob"){
   let scale = 1;
   if(source === "elite") scale = 2.5;
-  else if(source === "boss") scale = 5.0;
-  else if(source === "ulti") scale = 1.6;
-  else if(source === "bleed") scale = 0.90;
+  else if(source === "boss") scale = 7.0;
+  else if(source === "ulti") scale = 2.2;
+  else if(source === "bleed") scale = 1.2;
 
   const tierBand = getLootTierBand(mapTier);
   if(tierBand === 2) scale *= 1.25;
@@ -10528,7 +10528,7 @@ function findNearestLootDropPos(x, y){
   return { x, y };
 }
 function spawnLoot(x, y, source="mob"){
-  if(source === "mob" && Math.random() >= 0.35) return false;
+  if(source === "mob" && Math.random() >= 0.55) return false;
   if(loots.length > 25) loots.splice(0, loots.length-25);
 
   const orbDrop = rollOrbDrop(source);
