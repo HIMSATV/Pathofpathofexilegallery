@@ -39177,37 +39177,43 @@ try{
     return !!(p && enemy && Array.isArray(p.hitEnemies) && p.hitEnemies.includes(enemy));
   }
 
-  function applyProjectileHitDamage(p, enemy){
-    if(!p || !enemy) return false;
-    const fakeSkill = { id: p.sourceSkillId || p.kind || "projectile", tags: p.tags || [] };
-    const ctx = buildCombatCtx(fakeSkill.id, enemy);
-    ctx.tags = mergeTags(ctx.tags || [], fakeSkill.tags || []);
+function applyProjectileHitDamage(p, enemy){
+  if(!p || !enemy) return false;
 
-    let hitDamage = p.damage;
-    let glacierSlowBonus = false;
-    if((p.kind === "glacierShard" || fakeSkill.id === "glacierShards") && typeof isEnemySlowedForObliterate === 'function' && isEnemySlowedForObliterate(enemy)){
-      glacierSlowBonus = true;
-      const slowMul = Math.max(1, Number(p.slowedDamageMul || 1.60) || 1.60);
-      if(typeof scaleDamagePacket === 'function') hitDamage = scaleDamagePacket(hitDamage, slowMul);
-      else hitDamage = Number(hitDamage || 0) * slowMul;
-    }
+  const fakeSkill = { id: p.sourceSkillId || p.kind || "projectile", tags: p.tags || [] };
+  const ctx = buildCombatCtx(fakeSkill.id, enemy);
+  ctx.tags = mergeTags(ctx.tags || [], fakeSkill.tags || []);
 
-    const result = computeFinalDamage(hitDamage, ctx);
-    enemy.__killFxKind = window.__lastDamageFxKind || enemy.__killFxKind || "physical";
-
-    let killed = false;
-    if(typeof damageEnemyDirect === "function") killed = !!damageEnemyDirect(enemy, result.dealt);
-    else if(typeof window.damageEnemyDirect === "function") killed = !!window.damageEnemyDirect(enemy, result.dealt);
-    else{
-      enemy.hp -= result.dealt;
-      killed = enemy.hp <= 0;
-    }
-
-    if(glacierSlowBonus && typeof spawnGlacierShardImpactFx === 'function'){
-      spawnGlacierShardImpactFx(enemy.x || 0, enemy.y || 0, Math.max(16, Number(p.shatterFxRadius || 22) || 22));
-    }
-    return killed;
+  let hitDamage = p.damage;
+  let glacierSlowBonus = false;
+  if((p.kind === "glacierShard" || fakeSkill.id === "glacierShards") && typeof isEnemySlowedForObliterate === 'function' && isEnemySlowedForObliterate(enemy)){
+    glacierSlowBonus = true;
+    const slowMul = Math.max(1, Number(p.slowedDamageMul || 1.60) || 1.60);
+    if(typeof scaleDamagePacket === 'function') hitDamage = scaleDamagePacket(hitDamage, slowMul);
+    else hitDamage = Number(hitDamage || 0) * slowMul;
   }
+
+  const result = computeFinalDamage(hitDamage, ctx);
+  enemy.__killFxKind = window.__lastDamageFxKind || enemy.__killFxKind || "physical";
+
+  // ✅ 모든 흡수 / 보조 / 온히트 적용
+  if(typeof applyCommonSupportOnHit === "function"){
+    applyCommonSupportOnHit(fakeSkill, result.dealt);
+  }
+
+  let killed = false;
+  if(typeof damageEnemyDirect === "function") killed = !!damageEnemyDirect(enemy, result.dealt);
+  else if(typeof window.damageEnemyDirect === "function") killed = !!window.damageEnemyDirect(enemy, result.dealt);
+  else{
+    enemy.hp -= result.dealt;
+    killed = enemy.hp <= 0;
+  }
+
+  if(glacierSlowBonus && typeof spawnGlacierShardImpactFx === 'function'){
+    spawnGlacierShardImpactFx(enemy.x || 0, enemy.y || 0, Math.max(16, Number(p.shatterFxRadius || 22) || 22));
+  }
+  return killed;
+}
 
   function pushCobraLashFx(x1, y1, x2, y2, jump){
     window.__cobraLashFx = window.__cobraLashFx || [];
